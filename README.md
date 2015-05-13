@@ -1,0 +1,1 @@
+A statistics aggregtion daemon inspired by Statsd. It doesn't follow the StatsD protocol rather is receives JSON over HTTP, performs aggregation and forwards metrics to InfluxDB. Aggregated supports Gauges, Counters, Histograms and Sets.

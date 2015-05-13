@@ -1,0 +1,9 @@
+language: go
+
+go:
+  - tip
+
+install:
+  - go get -t "github.com/spf13/viper"
+
+script: go test -v ./..
