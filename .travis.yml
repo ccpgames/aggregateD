@@ -5,6 +5,7 @@ go:
 
 install:
   - go get -t "github.com/spf13/viper"
+  - go get -t "github.com/influxdb/influxdb/client"
 
 script:
-  - go test -v 
+  - go test -v
