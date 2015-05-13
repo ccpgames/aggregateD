@@ -1,7 +1,0 @@
-{
-	"influxHost":   "52.17.152.179",
-		"influxPort":     "8086",
-		"influxUsername": "root",
-		"influxPassword": "root",
-		"influxDatabase": "metrics"
-}
