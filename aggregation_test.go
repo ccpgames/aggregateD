@@ -9,7 +9,7 @@ func TestCounterAggregation(t *testing.T) {
 		Name:      "requests",
 		Timestamp: "2015-05-12T14:49:32",
 		Type:      "counter",
-		Value:     1,
+		Value:     10,
 	}
 
 	counter2 := metric{
@@ -19,8 +19,15 @@ func TestCounterAggregation(t *testing.T) {
 		Value:     50,
 	}
 
+	counter3 := metric{
+		Name:      "requests",
+		Timestamp: "2015-05-12T14:49:31",
+		Type:      "counter",
+		Value:     -9,
+	}
 	processMetric(counter1)
 	processMetric(counter2)
+	processMetric(counter3)
 
 	aggregatedValue := buckets["requests"].Fields["counter"]
 
