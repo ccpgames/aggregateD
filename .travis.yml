@@ -6,4 +6,5 @@ go:
 install:
   - go get -t "github.com/spf13/viper"
 
-script: go test -v ./..
+script:
+  - go test -v ./..
