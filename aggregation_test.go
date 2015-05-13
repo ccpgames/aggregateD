@@ -2,6 +2,33 @@ package main
 
 import "testing"
 
+func TestGaugeAggregation(t *testing.T) {
+	registerAggregators()
+
+	gauge1 := metric{
+		Name:      "load",
+		Timestamp: "2015-05-12T14:49:32",
+		Type:      "gauge",
+		Value:     1000,
+	}
+
+	gauge2 := metric{
+		Name:      "load",
+		Timestamp: "2015-05-12T14:49:31",
+		Type:      "gauge",
+		Value:     1,
+	}
+
+	processMetric(gauge1)
+	processMetric(gauge2)
+
+	aggregatedValue := buckets["load"].Fields["gauge"]
+
+	if aggregatedValue != 1.0 {
+		t.Error("Expected 1, got ", aggregatedValue)
+	}
+}
+
 func TestCounterAggregation(t *testing.T) {
 	registerAggregators()
 
