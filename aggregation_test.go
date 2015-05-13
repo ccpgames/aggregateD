@@ -2,14 +2,56 @@ package main
 
 import "testing"
 
+func TestHistogramAggregation(t *testing.T) {
+	registerAggregators()
+	for i := 0.0; i < 101; i++ {
+		histogram1 := metric{
+			Name:      "latency",
+			Timestamp: "2015-05-12T14:49:32",
+			Type:      "histogram",
+			Value:     i,
+		}
+		processMetric(histogram1)
+	}
+
+	aggregatedCount := buckets["latency"].Fields["count"]
+	aggregatedAvg := buckets["latency"].Fields["avg"]
+	aggregatedMax := buckets["latency"].Fields["max"]
+	aggregatedMedian := buckets["latency"].Fields["median"]
+	aggregated95Percentile := buckets["latency"].Fields["95percentile"]
+
+	if aggregatedCount != 101.0 {
+		t.Error("Expected count of 101, got ", aggregatedCount)
+	}
+
+	if aggregatedAvg != 50.0 {
+		t.Error("Expected average of 50, got ", aggregatedAvg)
+	}
+
+	if aggregatedMax != 100.0 {
+		t.Error("Expected max of 100, got ", aggregatedMax)
+	}
+
+	if aggregatedMedian != 50.0 {
+		t.Error("Expected median of 50, got ", aggregatedMax)
+	}
+
+	if aggregated95Percentile != 95.0 {
+		t.Error("Expected the 95th percentile to be 95, got ", aggregated95Percentile)
+	}
+
+}
 func TestGaugeAggregation(t *testing.T) {
 	registerAggregators()
 
-	gauge1 := metric{
-		Name:      "load",
-		Timestamp: "2015-05-12T14:49:32",
-		Type:      "gauge",
-		Value:     1000,
+	for i := 0.0; i < 100; i++ {
+		gauge1 := metric{
+			Name:      "load",
+			Timestamp: "2015-05-12T14:49:32",
+			Type:      "gauge",
+			Value:     i,
+		}
+		processMetric(gauge1)
 	}
 
 	gauge2 := metric{
@@ -19,7 +61,6 @@ func TestGaugeAggregation(t *testing.T) {
 		Value:     1,
 	}
 
-	processMetric(gauge1)
 	processMetric(gauge2)
 
 	aggregatedValue := buckets["load"].Fields["gauge"]
