@@ -1,6 +1,6 @@
 [![Build Status](https://travis-ci.org/ccpgames/ccp-aggregateD.svg?branch=master)](https://travis-ci.org/ccpgames/ccp-aggregateD)
 
-A statistics aggregtion daemon inspired by Statsd. It doesn't follow the StatsD protocol rather is receives JSON over HTTP, performs aggregation and forwards metrics to InfluxDB. Aggregated supports Gauges, Counters, Histograms, Sets and Events.
+aggregateD is a statistics aggregtion daemon inspired by dogstatsD and offers a similar features set. Rather than following the statsD protocol which isn't really human readable or particularly extensible and instead of using UDP which risk metric loss, aggregateD makes use of json over http. InfluxDB provides storage for the aggregated metrics. 
 
 Usuage:
   ./aggregated -config aggregated.json
