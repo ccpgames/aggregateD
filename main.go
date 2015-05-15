@@ -64,10 +64,16 @@ var (
 	metricsIn     = make(chan metric, 10000)
 	eventsIn      = make(chan event, 10000)
 	flushInterval = 10 //flag.Int64("flush-interval", 10, "Flush interval")
-	aggregators   = make(map[string]func(metric))
 	influxConfig  influxDBConfig
 	buckets       = make(map[string]*bucket)
 	events        = make(map[eventKey]*bucket)
+
+	aggregators = map[string]func(metric){
+		"gauge":     gaugeAggregator,
+		"set":       setAggregator,
+		"counter":   counterAggregator,
+		"histogram": histogramAggregator,
+	}
 )
 
 func aggregate() {
@@ -235,7 +241,6 @@ func main() {
 	viper.SetDefault("flushInterval", 10)
 	flushInterval = viper.GetInt("flushInterval")
 
-	registerAggregators()
 	go aggregate()
 	http.HandleFunc("/metrics", receiveMetric)
 	http.HandleFunc("/events", receiveEvent)

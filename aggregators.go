@@ -69,11 +69,3 @@ func histogramAggregator(receivedMetric metric) {
 	histogram.Fields["95percentile"] = percentile95
 
 }
-
-func registerAggregators() {
-	aggregators["gauge"] = gaugeAggregator
-	aggregators["gauge"] = gaugeAggregator
-	aggregators["set"] = setAggregator
-	aggregators["counter"] = counterAggregator
-	aggregators["histogram"] = histogramAggregator
-}

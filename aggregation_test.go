@@ -3,7 +3,6 @@ package main
 import "testing"
 
 func TestHistogramAggregation(t *testing.T) {
-	registerAggregators()
 	for i := 0.0; i < 101; i++ {
 		histogram1 := metric{
 			Name:      "latency",
@@ -42,8 +41,6 @@ func TestHistogramAggregation(t *testing.T) {
 
 }
 func TestGaugeAggregation(t *testing.T) {
-	registerAggregators()
-
 	for i := 0.0; i < 100; i++ {
 		gauge1 := metric{
 			Name:      "load",
@@ -71,8 +68,6 @@ func TestGaugeAggregation(t *testing.T) {
 }
 
 func TestCounterAggregation(t *testing.T) {
-	registerAggregators()
-
 	counter1 := metric{
 		Name:      "requests",
 		Timestamp: "2015-05-12T14:49:32",

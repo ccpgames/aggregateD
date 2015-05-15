@@ -1,6 +1,20 @@
 [![Build Status](https://travis-ci.org/ccpgames/ccp-aggregateD.svg?branch=master)](https://travis-ci.org/ccpgames/ccp-aggregateD)
 
-aggregateD is a statistics aggregtion daemon inspired by dogstatsD and offers a similar features set. Rather than following the statsD protocol which isn't really human readable or particularly extensible and instead of using UDP which risk metric loss, aggregateD makes use of json over http. InfluxDB provides storage for the aggregated metrics. 
+aggregateD
+===========
+
+aggregateD is a network daemon which listens for metrics including gauges, counters, histograms, sets and events, sent over http and sends aggregates to InfluxDB. InfluxDB is a promising, but young time series database, aggregateD is intended to bring dogstatsD like functionality to Influx. It also serves to abstract database details such as credentials, db names and location away from clients and to load balance metrics over an InfluxDB cluster.  
+
+
+Why HTTP?
+---------
+
+Http is used in lieu of UDP (which is used in dogstatsD and regular statsD) as it allows the client to detect if aggregateD is down and temporarily cache metrics (or send to an alternative host) until it becomes available again. Http is also the standard protocol for exchanging JSON, which is used for convenience as it is the interchange format used by InfluxDB.
+
+Support for UDP and raw TCP may be added in the future.
+
+Usage and Configuration
+-----------------------
 
 Usuage:
   ./aggregated -config aggregated.json
@@ -21,7 +35,7 @@ aggregateD exposes two web service endpoints: /events and /metrics on port 8083 
   ```json
   {
   	"name":      "requests",
-  	"host":     "httpd.example.com",
+  	"host":      "httpd.example.com",
   	"timestamp": "Wed, 13 May 2015 14:56:25 +0000",
   	"type":      "gauge",
   	"value":     67,
