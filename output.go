@@ -9,6 +9,14 @@ import (
 	"github.com/influxdb/influxdb/client"
 )
 
+type influxDBConfig struct {
+	influxHost     string
+	influxPort     string
+	influxUsername string
+	influxPassword string
+	influxDatabase string
+}
+
 func configureInfluxDB(config influxDBConfig) client.Client {
 
 	influxURL, err := url.Parse(fmt.Sprintf("http://%s:%s", config.influxHost, config.influxPort))

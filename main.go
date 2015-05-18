@@ -52,14 +52,6 @@ type eventKey struct {
 	AggregationKey string
 }
 
-type influxDBConfig struct {
-	influxHost     string
-	influxPort     string
-	influxUsername string
-	influxPassword string
-	influxDatabase string
-}
-
 var (
 	metricsIn     = make(chan metric, 10000)
 	eventsIn      = make(chan event, 10000)
@@ -217,10 +209,10 @@ func receiveEvent(response http.ResponseWriter, request *http.Request) {
 	}
 }
 
-func main() {
+func parseConfig() {
 	var (
 		config = flag.String("config", "./aggregated", "configuration file")
-		port   = flag.String("port", "8082", "Port to listen on for metrics and events, default 8082")
+		//port   = flag.String("port", "8082", "Port to listen on for metrics and events, default 8082")
 	)
 
 	viper.SetConfigName(*config)
@@ -230,20 +222,28 @@ func main() {
 		log.Fatal("No configuration file found, exiting")
 	}
 
-	influxConfig = influxDBConfig{
-		influxHost:     viper.GetString("influxHost"),
-		influxPort:     viper.GetString("influxPort"),
-		influxUsername: viper.GetString("influxUsername"),
-		influxPassword: viper.GetString("influxPassword"),
-		influxDatabase: viper.GetString("influxDatabase"),
+	if viper.GetBool("useInfluxDB") {
+		influxConfig = influxDBConfig{
+			influxHost:     viper.GetString("influxHost"),
+			influxPort:     viper.GetString("influxPort"),
+			influxUsername: viper.GetString("influxUsername"),
+			influxPassword: viper.GetString("influxPassword"),
+			influxDatabase: viper.GetString("influxDatabase"),
+		}
+	} else {
+		panic("No outputs defined")
 	}
 
 	viper.SetDefault("flushInterval", 10)
 	flushInterval = viper.GetInt("flushInterval")
+}
+
+func main() {
+	parseConfig()
 
 	go aggregate()
 	http.HandleFunc("/metrics", receiveMetric)
 	http.HandleFunc("/events", receiveEvent)
 
-	log.Fatal(http.ListenAndServe(":"+*port, nil))
+	log.Fatal(http.ListenAndServe(":8000", nil))
 }
