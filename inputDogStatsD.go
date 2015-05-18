@@ -1,22 +1,79 @@
 package main
 
 import (
+	"errors"
+	"net"
 	"strconv"
 	"strings"
 	"time"
 )
 
-func parseDogStatsDMetric(message string) metric {
-	name := message[0:strings.Index(message, ":")]
-	value := message[strings.Index(message, ":")+1 : strings.Index(message, "|")]
+func serveUDP(port string) string {
+	var buf [1024]byte
+	addr, err := net.ResolveUDPAddr("udp", ":"+port)
+
+	if err != nil {
+		panic(err)
+	}
+
+	sock, err := net.ListenUDP("udp", addr)
+
+	if err != nil {
+		panic(err)
+	}
+
+	for {
+		rlen, _, _ := sock.ReadFromUDP(buf[:])
+		message := string(buf[:rlen])
+
+		if strings.Index(message, "_e") == -1 {
+			parseDogStatsDMetric(message)
+		} else {
+			//parseDogStatDEvent(message)
+		}
+	}
+
+}
+func parseDogStatsDMetric(message string) (metric, error) {
+	//function to parse a metric struct from a dogstatsd message which takes the
+	//form of:
+	//metric.name:value|type|@sample_rate|#tag1:value,tag2
+
+	//the indicies of the various delimiters
+	colonIndex := strings.Index(message, ":")
+	ibarIndex := strings.Index(message, "|")
+	atIndex := strings.Index(message, "@")
+	hashIndex := strings.Index(message, "#")
+	finished := false
+	tags := ""
+
+	if colonIndex == -1 || ibarIndex == -1 || atIndex == -1 {
+		return metric{}, errors.New("unable to parse DogStatsD message")
+	}
+
+	//if there is no hash, there are no tags. therefore set hashIndex as the
+	//end of the message and set finished to true so tag parsing never occurs
+	if hashIndex == -1 {
+		hashIndex = len(message)
+		finished = true
+	} else {
+		tags = message[hashIndex+1 : len(message)]
+	}
+
+	name := message[0:colonIndex]
+	value := message[colonIndex+1 : ibarIndex]
 	floatValue, _ := strconv.ParseFloat(value, 64)
-	metricType := message[strings.Index(message, "|")+1 : strings.Index(message, "@")-1]
-	sampleRate := message[strings.Index(message, "@")+1 : strings.Index(message, "#")-1]
+	metricType := message[ibarIndex+1 : atIndex-1]
+
+	sampleRate := message[atIndex+1 : hashIndex-1]
+
+	if sampleRate == "" {
+		return metric{}, errors.New("unable to parse DogStatsD message")
+	}
+
 	floatSampleRate, _ := strconv.ParseFloat(sampleRate, 64)
 
-	tags := message[strings.Index(message, "#")+1 : len(message)]
 	tagMap := make(map[string]string)
-	finished := false
 
 	for !finished {
 		comma := strings.Index(tags, ",")
@@ -58,5 +115,6 @@ func parseDogStatsDMetric(message string) metric {
 		Tags:      tagMap,
 	}
 
-	return parsedMetric
+	metricsIn <- parsedMetric
+	return parsedMetric, nil
 }

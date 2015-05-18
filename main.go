@@ -1,11 +1,9 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
-	"net/http"
 	"time"
 
 	"github.com/spf13/viper"
@@ -181,39 +179,8 @@ func flush() {
 
 }
 
-//http handler function, unmarshalls json encoded metric into metric struct
-func receiveMetric(response http.ResponseWriter, request *http.Request) {
-	decoder := json.NewDecoder(request.Body)
-	var receivedMetric metric
-	err := decoder.Decode(&receivedMetric)
-
-	if err == nil {
-		metricsIn <- receivedMetric
-	} else {
-		fmt.Println("error parsing metric")
-		fmt.Println(err)
-	}
-}
-
-func receiveEvent(response http.ResponseWriter, request *http.Request) {
-	decoder := json.NewDecoder(request.Body)
-	var receivedEvent event
-	err := decoder.Decode(&receivedEvent)
-
-	if err == nil {
-		eventsIn <- receivedEvent
-
-	} else {
-		fmt.Println("error parsing event")
-		fmt.Println(err)
-	}
-}
-
 func parseConfig() {
-	var (
-		config = flag.String("config", "./aggregated", "configuration file")
-		//port   = flag.String("port", "8082", "Port to listen on for metrics and events, default 8082")
-	)
+	config := flag.String("config", "", "configuration file")
 
 	viper.SetConfigName(*config)
 	err := viper.ReadInConfig()
@@ -222,7 +189,7 @@ func parseConfig() {
 		log.Fatal("No configuration file found, exiting")
 	}
 
-	if viper.GetBool("useInfluxDB") {
+	if viper.GetBool("outputInfluxDB") {
 		influxConfig = influxDBConfig{
 			influxHost:     viper.GetString("influxHost"),
 			influxPort:     viper.GetString("influxPort"),
@@ -234,16 +201,22 @@ func parseConfig() {
 		panic("No outputs defined")
 	}
 
+	if viper.GetBool("inputJSON") {
+		viper.SetDefault("HTTPPort", "8003")
+		go serveHTTP(viper.GetString("HTTPPort"))
+	}
+
+	if viper.GetBool("inputDogStatsD") {
+		viper.SetDefault("UDPPort", "8125")
+		go serveUDP(viper.GetString("UDPPort"))
+	}
+
 	viper.SetDefault("flushInterval", 10)
+
 	flushInterval = viper.GetInt("flushInterval")
 }
 
 func main() {
 	parseConfig()
-
-	go aggregate()
-	http.HandleFunc("/metrics", receiveMetric)
-	http.HandleFunc("/events", receiveEvent)
-
-	log.Fatal(http.ListenAndServe(":8000", nil))
+	aggregate()
 }

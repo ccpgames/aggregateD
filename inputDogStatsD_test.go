@@ -5,10 +5,26 @@ import (
 	"testing"
 )
 
+func TestInvalidMessage(t *testing.T) {
+	message := "foo:5|gauge324324"
+	result, err := parseDogStatsDMetric(message)
+
+	if err == nil {
+		t.Error("expected error, got", result)
+	}
+
+	message = "foogauge324324"
+	result, err = parseDogStatsDMetric(message)
+
+	if err == nil {
+		t.Error("expected error, got", result)
+	}
+}
+
 func TestMetricParse(t *testing.T) {
 	//message := "metric.name:value|type|@sample_rate|#tag1:value,tag2"
 	message := "foo:5|gauge|@0.5|#nonkvtag,tag1:firstvalue,tag2:second,tag3:third"
-	result := parseDogStatsDMetric(message)
+	result, _ := parseDogStatsDMetric(message)
 
 	if result.Name != "foo" {
 		t.Error("Expected name foo got", result.Name)
