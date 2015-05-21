@@ -3,15 +3,9 @@
 aggregateD
 ===========
 
-aggregateD is a network daemon which listens for metrics including gauges, counters, histograms, sets and events, sent over http and sends aggregates to InfluxDB. InfluxDB is a promising, but young time series database, aggregateD is intended to bring dogstatsD like functionality to Influx. It also serves to abstract database details such as credentials, db names and location away from clients and to load balance metrics over an InfluxDB cluster.  
+aggregateD is a network daemon which listens for metrics including gauges, counters, histograms, sets and events, sent over http and sends aggregates to InfluxDB. InfluxDB is a promising, but young time series database, aggregateD is intended to bring dogstatsD like functionality to Influx.
 
-
-Why HTTP?
----------
-
-Http is used in lieu of UDP (which is used in dogstatsD and regular statsD) as it allows the client to detect if aggregateD is down and temporarily cache metrics (or send to an alternative host) until it becomes available again. Http is also the standard protocol for exchanging JSON, which is used for convenience as it is the interchange format used by InfluxDB.
-
-Support for UDP and raw TCP may be added in the future.
+aggregateD can accept metrics either as JSON over HTTP or in the dogstatsD format sent over UDP.  Therefore, aggregateD can be deployed in the same manner as either satsD or dogstatsD. That is, it can either run on the same host as instrumented applications or it can run on a dedicated host that multiple clients communicate with.
 
 Usage and Configuration
 -----------------------
@@ -22,6 +16,9 @@ Usuage:
 aggregateD requires a minimal config in order to specify the InfluxDB server and its credentials. Config can either be provided as a json file or as a yaml file. An example config is as follows:
   ```json
   {
+    "inputJSON": true,
+    "inputDogStatsD": true,
+    "outputInfluxDB": true,
     "influxHost":   "127.0.0.1",
     "influxPort":     "8086",
     "influxUsername": "root",

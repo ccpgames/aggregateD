@@ -54,5 +54,10 @@ func TestMetricParse(t *testing.T) {
 	if v2 != "nonkvtag" {
 		t.Error("value of nonkvtag was expected to be nonkvtag got", v2)
 	}
+}
+
+func TestEventParse(t *testing.T) {
+	message := "_e{title.length,text.length}:title|text|d:date_happened|h:hostname|p:priority|t:alert_type|#tag1,tag2"
+	parseDogStatsDEvent(message)
 
 }

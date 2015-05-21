@@ -44,8 +44,7 @@ func parseDogStatsDMetric(message string) (metric, error) {
 	ibarIndex := strings.Index(message, "|")
 	atIndex := strings.Index(message, "@")
 	hashIndex := strings.Index(message, "#")
-	finished := false
-	tags := ""
+	tagMap := make(map[string]string)
 
 	if colonIndex == -1 || ibarIndex == -1 || atIndex == -1 {
 		return metric{}, errors.New("unable to parse DogStatsD message")
@@ -55,16 +54,15 @@ func parseDogStatsDMetric(message string) (metric, error) {
 	//end of the message and set finished to true so tag parsing never occurs
 	if hashIndex == -1 {
 		hashIndex = len(message)
-		finished = true
 	} else {
-		tags = message[hashIndex+1 : len(message)]
+		tags := message[hashIndex+1 : len(message)]
+		tagMap = parseTags(tags)
 	}
 
 	name := message[0:colonIndex]
 	value := message[colonIndex+1 : ibarIndex]
 	floatValue, _ := strconv.ParseFloat(value, 64)
 	metricType := message[ibarIndex+1 : atIndex-1]
-
 	sampleRate := message[atIndex+1 : hashIndex-1]
 
 	if sampleRate == "" {
@@ -73,7 +71,31 @@ func parseDogStatsDMetric(message string) (metric, error) {
 
 	floatSampleRate, _ := strconv.ParseFloat(sampleRate, 64)
 
+	t := time.Now()
+
+	parsedMetric := metric{
+		Name:      name,
+		Timestamp: t.Format(time.RFC1123),
+		Type:      metricType,
+		Value:     floatValue,
+		Sampling:  floatSampleRate,
+		Tags:      tagMap,
+	}
+
+	metricsIn <- parsedMetric
+	return parsedMetric, nil
+}
+
+func parseDogStatsDEvent(message string) {
+	//_e{title.length,text.length}:title|text|d:date_happened|h:hostname|p:priority|t:alert_type|#tag1,tag2
+
+	a := message[strings.Index(message, "p:"):len(message)]
+	panic(a)
+}
+
+func parseTags(tags string) map[string]string {
 	tagMap := make(map[string]string)
+	finished := false
 
 	for !finished {
 		comma := strings.Index(tags, ",")
@@ -104,17 +126,5 @@ func parseDogStatsDMetric(message string) (metric, error) {
 
 	}
 
-	t := time.Now()
-
-	parsedMetric := metric{
-		Name:      name,
-		Timestamp: t.Format(time.RFC1123),
-		Type:      metricType,
-		Value:     floatValue,
-		Sampling:  floatSampleRate,
-		Tags:      tagMap,
-	}
-
-	metricsIn <- parsedMetric
-	return parsedMetric, nil
+	return tagMap
 }
