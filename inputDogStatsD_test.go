@@ -56,8 +56,8 @@ func TestMetricParse(t *testing.T) {
 	}
 }
 
-func TestEventParse(t *testing.T) {
-	message := "_e{title.length,text.length}:title|text|d:date_happened|h:hostname|p:priority|t:alert_type|#tag1,tag2"
-	parseDogStatsDEvent(message)
-
-}
+// func TestEventParse(t *testing.T) {
+// 	message := "_e{title.length,text.length}:title|text|d:date_happened|h:hostname|p:priority|t:alert_type|#tag1,tag2"
+// 	parseDogStatsDEvent(message)
+//
+// }
