@@ -86,12 +86,17 @@ func parseDogStatsDMetric(message string) (metric, error) {
 	return parsedMetric, nil
 }
 
-func parseDogStatsDEvent(message string) {
-	//_e{title.length,text.length}:title|text|d:date_happened|h:hostname|p:priority|t:alert_type|#tag1,tag2
-
-	a := message[strings.Index(message, "p:"):len(message)]
-	panic(a)
-}
+// func parseDogStatsDEvent(message string) {
+// 	//_e{title.length,text.length}:title|text|d:date_happened|h:hostname|p:priority|t:alert_type|#tag1,tag2
+//
+// 	//a := message[strings.Index(message, "p:")+2 : len(message)]
+//
+// 	titleLengthString := message[strings.Index(message, "{")+1 : strings.Index(message, ",")]
+// 	titleLength, _ := strconv.ParseInt(titleLengthString, 0, 64)
+//
+// 	title := message[strings.Index(message, ":") : strings.Index(message, ":")+titleLength]
+// 	panic(titleLength)
+// }
 
 func parseTags(tags string) map[string]string {
 	tagMap := make(map[string]string)

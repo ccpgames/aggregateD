@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/spf13/viper"
@@ -179,14 +180,14 @@ func flush() {
 
 }
 
-func parseConfig() {
-	config := flag.String("config", "", "configuration file")
-
-	viper.SetConfigName(*config)
+func parseConfig(config string) {
+	//viper accepts config file without extension, so remove extension
+	config = config[0:strings.Index(config, ".")]
+	viper.SetConfigName(config)
 	err := viper.ReadInConfig()
 
 	if err != nil {
-		log.Fatal("No configuration file found, exiting")
+		log.Fatal(err)
 	}
 
 	if viper.GetBool("outputInfluxDB") {
@@ -217,6 +218,9 @@ func parseConfig() {
 }
 
 func main() {
-	parseConfig()
+	config := flag.String("config", " ", "configuration file")
+	flag.Parse()
+
+	parseConfig(*config)
 	aggregate()
 }
