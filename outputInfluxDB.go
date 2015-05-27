@@ -54,10 +54,10 @@ func writeInfluxDB(buckets []bucket, influxConnection *client.Client, config inf
 		timestamp, _ := time.Parse("YYYY-MM-DD HH:MM:SS.mmm", bucket.Timestamp)
 
 		points[pointsIndex] = client.Point{
-			Name:   bucket.Name,
-			Tags:   bucket.Tags,
-			Fields: bucket.Fields,
-			Time:   timestamp,
+			Measurement: bucket.Name,
+			Tags:        bucket.Tags,
+			Fields:      bucket.Fields,
+			Time:        timestamp,
 		}
 		pointsIndex++
 	}
