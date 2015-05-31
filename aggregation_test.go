@@ -60,7 +60,7 @@ func TestGaugeAggregation(t *testing.T) {
 
 	processMetric(gauge2)
 
-	aggregatedValue := buckets["load"].Fields["gauge"]
+	aggregatedValue := buckets["load"].Fields["value"]
 
 	if aggregatedValue != 1.0 {
 		t.Error("Expected 1, got ", aggregatedValue)
@@ -92,7 +92,7 @@ func TestCounterAggregation(t *testing.T) {
 	processMetric(counter2)
 	processMetric(counter3)
 
-	aggregatedValue := buckets["requests"].Fields["counter"]
+	aggregatedValue := buckets["requests"].Fields["value"]
 
 	if aggregatedValue != 51.0 {
 		t.Error("Expected 51, got ", aggregatedValue)
