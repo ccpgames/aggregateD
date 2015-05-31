@@ -21,11 +21,12 @@ type metric struct {
 }
 
 type bucket struct {
-	Name      string
-	Timestamp string
-	Tags      map[string]string
-	Values    []float64 //intermediate values for histograms, only fields are sent to influxdb
-	Fields    map[string]interface{}
+	Name      string            `json:"name"`
+	Timestamp string            `json:"timestamp"`
+	Tags      map[string]string `json:"tags"`
+	//intermediate values for histograms, only fields are sent to influxdb
+	Values []float64              `json:"-"`
+	Fields map[string]interface{} `json:"columns"`
 }
 
 type event struct {
@@ -58,6 +59,7 @@ var (
 	influxConfig  influxDBConfig
 	buckets       = make(map[string]*bucket)
 	events        = make(map[eventKey]*bucket)
+	outputURL     string
 
 	aggregators = map[string]func(metric){
 		"gauge":     gaugeAggregator,
@@ -159,7 +161,7 @@ func processEvent(receivedEvent event) {
 }
 
 func flush() {
-	client := configureInfluxDB(influxConfig)
+
 	var bucketArray []bucket
 
 	if len(buckets) > 0 {
@@ -174,7 +176,15 @@ func flush() {
 		}
 	}
 
-	writeInfluxDB(bucketArray, &client, influxConfig)
+	if len(influxConfig.influxHost) > 0 {
+		client := configureInfluxDB(influxConfig)
+		writeInfluxDB(bucketArray, &client, influxConfig)
+	}
+
+	if len(outputURL) > 0 {
+		writeJSON(bucketArray, outputURL)
+	}
+
 	buckets = make(map[string]*bucket)
 	events = make(map[eventKey]*bucket)
 
@@ -190,6 +200,8 @@ func parseConfig(config string) {
 		log.Fatal(err)
 	}
 
+	outputUndefined := true
+
 	if viper.GetBool("outputInfluxDB") {
 		influxConfig = influxDBConfig{
 			influxHost:     viper.GetString("influxHost"),
@@ -198,7 +210,15 @@ func parseConfig(config string) {
 			influxPassword: viper.GetString("influxPassword"),
 			influxDatabase: viper.GetString("influxDatabase"),
 		}
-	} else {
+		outputUndefined = false
+	}
+
+	if viper.GetBool("outputJSON") {
+		outputURL = viper.GetString("outputURL")
+		outputUndefined = false
+	}
+
+	if outputUndefined {
 		panic("No outputs defined")
 	}
 

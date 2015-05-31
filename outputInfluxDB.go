@@ -51,13 +51,13 @@ func writeInfluxDB(buckets []bucket, influxConnection *client.Client, config inf
 
 	for k := range buckets {
 		bucket := buckets[k]
-		timestamp, _ := time.Parse("YYYY-MM-DD HH:MM:SS.mmm", bucket.Timestamp)
+		//timestamp, _ := time.Parse("YYYY-MM-DD HH:MM:SS.mmm", bucket.Timestamp)
 
 		points[pointsIndex] = client.Point{
 			Measurement: bucket.Name,
 			Tags:        bucket.Tags,
 			Fields:      bucket.Fields,
-			Time:        timestamp,
+			Time:        time.Now(),
 		}
 		pointsIndex++
 	}
@@ -70,7 +70,7 @@ func writeInfluxDB(buckets []bucket, influxConnection *client.Client, config inf
 
 	_, err := influxConnection.Write(pointsBatch)
 	if err != nil {
-		fmt.Println("Error writing to db")
+		fmt.Println("write failed:")
 		fmt.Println(err)
 	}
 }

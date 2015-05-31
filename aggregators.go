@@ -6,21 +6,21 @@ import (
 )
 
 func gaugeAggregator(receivedMetric metric) {
-	_, ok := buckets[receivedMetric.Name].Fields["gauge"]
+	_, ok := buckets[receivedMetric.Name].Fields["value"]
 
 	if !ok {
-		buckets[receivedMetric.Name].Fields["gauge"] = 0
+		buckets[receivedMetric.Name].Fields["value"] = 0
 	}
 
 	buckets[receivedMetric.Name].Timestamp = receivedMetric.Timestamp
-	buckets[receivedMetric.Name].Fields["gauge"] = receivedMetric.Value
+	buckets[receivedMetric.Name].Fields["value"] = receivedMetric.Value
 }
 
 func counterAggregator(receivedMetric metric) {
-	_, ok := buckets[receivedMetric.Name].Fields["counter"]
+	_, ok := buckets[receivedMetric.Name].Fields["value"]
 
 	if !ok {
-		buckets[receivedMetric.Name].Fields["counter"] = 0.0
+		buckets[receivedMetric.Name].Fields["value"] = 0.0
 	}
 
 	//to avoid the metric being lost, if sampling is undefined set it to 1
@@ -32,8 +32,8 @@ func counterAggregator(receivedMetric metric) {
 	//updating the value is broken down into several lines in order to make dealing
 	//with type coersion easier
 	sampledValue := receivedMetric.Value * (1 / receivedMetric.Sampling)
-	previousValue := buckets[receivedMetric.Name].Fields["counter"].(float64)
-	buckets[receivedMetric.Name].Fields["counter"] = sampledValue + previousValue
+	previousValue := buckets[receivedMetric.Name].Fields["value"].(float64)
+	buckets[receivedMetric.Name].Fields["value"] = sampledValue + previousValue
 	buckets[receivedMetric.Name].Timestamp = receivedMetric.Timestamp
 }
 
