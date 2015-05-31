@@ -26,7 +26,7 @@ type bucket struct {
 	Tags      map[string]string `json:"tags"`
 	//intermediate values for histograms, only fields are sent to influxdb
 	Values []float64              `json:"-"`
-	Fields map[string]interface{} `json:"columns"`
+	Fields map[string]interface{} `json:"fields"`
 }
 
 type event struct {
