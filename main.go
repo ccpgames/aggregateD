@@ -56,10 +56,11 @@ var (
 	metricsIn     = make(chan metric, 10000)
 	eventsIn      = make(chan event, 10000)
 	flushInterval = 10 //flag.Int64("flush-interval", 10, "Flush interval")
-	influxConfig  influxDBConfig
 	buckets       = make(map[string]*bucket)
 	events        = make(map[eventKey]*bucket)
 	outputURL     string
+	reportStats   bool
+	influxConfig  influxDBConfig
 
 	aggregators = map[string]func(metric){
 		"gauge":     gaugeAggregator,
@@ -220,6 +221,10 @@ func parseConfig(config string) {
 
 	if outputUndefined {
 		panic("No outputs defined")
+	}
+
+	if viper.GetBool("reportStats") {
+		reportStats = true
 	}
 
 	if viper.GetBool("inputJSON") {
