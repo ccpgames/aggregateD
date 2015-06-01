@@ -53,14 +53,14 @@ type eventKey struct {
 }
 
 var (
-	metricsIn     = make(chan metric, 10000)
-	eventsIn      = make(chan event, 10000)
-	flushInterval = 10 //flag.Int64("flush-interval", 10, "Flush interval")
-	buckets       = make(map[string]*bucket)
-	events        = make(map[eventKey]*bucket)
-	outputURL     string
-	reportStats   bool
-	influxConfig  influxDBConfig
+	metricsIn       = make(chan metric, 10000)
+	eventsIn        = make(chan event, 10000)
+	flushInterval   = 10 //flag.Int64("flush-interval", 10, "Flush interval")
+	buckets         = make(map[string]*bucket)
+	events          = make(map[eventKey]*bucket)
+	outputURL       string
+	reportMetaStats bool
+	influxConfig    influxDBConfig
 
 	aggregators = map[string]func(metric){
 		"gauge":     gaugeAggregator,
@@ -117,6 +117,20 @@ func processMetric(receivedMetric metric) {
 		}
 
 		handler(receivedMetric)
+
+		//create a meta-metric couting the number of metrics that are processed
+		if reportMetaStats {
+			//ensure that metametrics aren't reported as regular metrics
+			if receivedMetric.Name != "aggregated_metric_count" {
+				metastats := new(metric)
+				metastats.Name = "aggregated_metric_count"
+				metastats.Sampling = 1
+				metastats.Timestamp = time.Now().Format("2006-01-02 15:04:05 -0700")
+				metastats.Value = 1
+
+				metricsIn <- *metastats
+			}
+		}
 	}
 }
 
@@ -223,8 +237,8 @@ func parseConfig(config string) {
 		panic("No outputs defined")
 	}
 
-	if viper.GetBool("reportStats") {
-		reportStats = true
+	if viper.GetBool("reportMetaStats") {
+		reportMetaStats = true
 	}
 
 	if viper.GetBool("inputJSON") {
