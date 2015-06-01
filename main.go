@@ -125,6 +125,7 @@ func processMetric(receivedMetric metric) {
 				metastats := new(metric)
 				metastats.Name = "aggregated_metric_count"
 				metastats.Sampling = 1
+				metastats.Type = "counter"
 				metastats.Timestamp = time.Now().Format("2006-01-02 15:04:05 -0700")
 				metastats.Value = 1
 
