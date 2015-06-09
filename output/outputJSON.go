@@ -11,9 +11,10 @@ func WriteJSON(buckets []Bucket, url string) {
 	for i := range buckets {
 		jsonStr, _ := json.Marshal(buckets[i])
 		req, _ := http.NewRequest("POST", url, bytes.NewBuffer(jsonStr))
+		req.Close = true
 		req.Header.Set("Content-Type", "application/json")
 		client := &http.Client{}
 		client.Do(req)
-		req.Body.Close()
+		defer req.Body.Close()
 	}
 }
