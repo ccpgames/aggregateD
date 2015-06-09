@@ -1,10 +1,14 @@
 package main
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/ccpgames/aggregateD/input"
+)
 
 func TestHistogramAggregation(t *testing.T) {
 	for i := 0.0; i < 101; i++ {
-		histogram1 := metric{
+		histogram1 := input.Metric{
 			Name:      "latency",
 			Timestamp: "2015-05-12T14:49:32",
 			Type:      "histogram",
@@ -42,7 +46,7 @@ func TestHistogramAggregation(t *testing.T) {
 }
 func TestGaugeAggregation(t *testing.T) {
 	for i := 0.0; i < 100; i++ {
-		gauge1 := metric{
+		gauge1 := input.Metric{
 			Name:      "load",
 			Timestamp: "2015-05-12T14:49:32",
 			Type:      "gauge",
@@ -51,7 +55,7 @@ func TestGaugeAggregation(t *testing.T) {
 		processMetric(gauge1)
 	}
 
-	gauge2 := metric{
+	gauge2 := input.Metric{
 		Name:      "load",
 		Timestamp: "2015-05-12T14:49:31",
 		Type:      "gauge",
@@ -68,21 +72,21 @@ func TestGaugeAggregation(t *testing.T) {
 }
 
 func TestCounterAggregation(t *testing.T) {
-	counter1 := metric{
+	counter1 := input.Metric{
 		Name:      "requests",
 		Timestamp: "2015-05-12T14:49:32",
 		Type:      "counter",
 		Value:     10,
 	}
 
-	counter2 := metric{
+	counter2 := input.Metric{
 		Name:      "requests",
 		Timestamp: "2015-05-12T14:49:31",
 		Type:      "counter",
 		Value:     50,
 	}
 
-	counter3 := metric{
+	counter3 := input.Metric{
 		Name:      "requests",
 		Timestamp: "2015-05-12T14:49:31",
 		Type:      "counter",
