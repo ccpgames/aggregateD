@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/ccpgames/ccp-aggregateD.svg?branch=master)](https://travis-ci.org/ccpgames/ccp-aggregateD)
+[![Build Status](https://travis-ci.org/ccpgames/aggregateD.svg?branch=master)](https://travis-ci.org/ccpgames/ccp-aggregateD)
 
 aggregateD
 ===========
