@@ -3,9 +3,11 @@ package main
 import (
 	"sort"
 	"strconv"
+
+	"github.com/ccpgames/aggregateD/input"
 )
 
-func gaugeAggregator(receivedMetric metric) {
+func gaugeAggregator(receivedMetric input.Metric) {
 	_, ok := buckets[receivedMetric.Name].Fields["value"]
 
 	if !ok {
@@ -16,7 +18,7 @@ func gaugeAggregator(receivedMetric metric) {
 	buckets[receivedMetric.Name].Fields["value"] = receivedMetric.Value
 }
 
-func counterAggregator(receivedMetric metric) {
+func counterAggregator(receivedMetric input.Metric) {
 	_, ok := buckets[receivedMetric.Name].Fields["value"]
 
 	if !ok {
@@ -37,12 +39,12 @@ func counterAggregator(receivedMetric metric) {
 	buckets[receivedMetric.Name].Timestamp = receivedMetric.Timestamp
 }
 
-func setAggregator(receivedMetric metric) {
+func setAggregator(receivedMetric input.Metric) {
 	k := strconv.FormatFloat(float64(receivedMetric.Value), 'f', 2, 32)
 	buckets[receivedMetric.Name].Fields[k] = receivedMetric.Value
 }
 
-func histogramAggregator(receivedMetric metric) {
+func histogramAggregator(receivedMetric input.Metric) {
 	histogram := buckets[receivedMetric.Name]
 	histogram.Timestamp = receivedMetric.Timestamp
 	histogram.Values = append(histogram.Values, receivedMetric.Value)

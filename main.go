@@ -7,39 +7,32 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ccpgames/aggregateD/input"
+	"github.com/ccpgames/aggregateD/output"
 	"github.com/spf13/viper"
 )
 
-type metric struct {
-	Name      string
-	Host      string
-	Timestamp string
-	Type      string
-	Value     float64
-	Sampling  float64
-	Tags      map[string]string
-}
+// type metric struct {
+// 	Name      string
+// 	Host      string
+// 	Timestamp string
+// 	Type      string
+// 	Value     float64
+// 	Sampling  float64
+// 	Tags      map[string]string
+// }
 
-type bucket struct {
-	Name      string            `json:"name"`
-	Timestamp string            `json:"timestamp"`
-	Tags      map[string]string `json:"tags"`
-	//intermediate values for histograms, only fields are sent to influxdb
-	Values []float64              `json:"-"`
-	Fields map[string]interface{} `json:"fields"`
-}
-
-type event struct {
-	Name           string
-	Text           string
-	Host           string
-	AggregationKey string
-	Priority       string
-	Timestamp      string
-	AlertType      string
-	Tags           map[string]string
-	SourceType     string
-}
+// type event struct {
+// 	Name           string
+// 	Text           string
+// 	Host           string
+// 	AggregationKey string
+// 	Priority       string
+// 	Timestamp      string
+// 	AlertType      string
+// 	Tags           map[string]string
+// 	SourceType     string
+// }
 
 //eventKey is used as the key in the map of events, this is needed as
 //the datadog docs specify that events are aggregated based on
@@ -53,16 +46,16 @@ type eventKey struct {
 }
 
 var (
-	metricsIn       = make(chan metric, 10000)
-	eventsIn        = make(chan event, 10000)
+	metricsIn       = make(chan input.Metric, 10000)
+	eventsIn        = make(chan input.Event, 10000)
 	flushInterval   = 10 //flag.Int64("flush-interval", 10, "Flush interval")
-	buckets         = make(map[string]*bucket)
-	events          = make(map[eventKey]*bucket)
+	buckets         = make(map[string]*output.Bucket)
+	events          = make(map[eventKey]*output.Bucket)
 	outputURL       string
 	reportMetaStats bool
-	influxConfig    influxDBConfig
+	influxConfig    output.InfluxDBConfig
 
-	aggregators = map[string]func(metric){
+	aggregators = map[string]func(input.Metric){
 		"gauge":     gaugeAggregator,
 		"set":       setAggregator,
 		"counter":   counterAggregator,
@@ -84,7 +77,7 @@ func aggregate() {
 	}
 }
 
-func processMetric(receivedMetric metric) {
+func processMetric(receivedMetric input.Metric) {
 	//if a handler exists to aggregate the metric, do so
 	//otherwise ignore the metric
 	if receivedMetric.Name == "" {
@@ -103,7 +96,7 @@ func processMetric(receivedMetric metric) {
 
 		//if bucket doesn't exist, create one
 		if !ok {
-			buckets[receivedMetric.Name] = new(bucket)
+			buckets[receivedMetric.Name] = new(output.Bucket)
 			buckets[receivedMetric.Name].Name = receivedMetric.Name
 			buckets[receivedMetric.Name].Fields = make(map[string]interface{})
 			buckets[receivedMetric.Name].Tags = make(map[string]string)
@@ -116,13 +109,15 @@ func processMetric(receivedMetric metric) {
 			buckets[receivedMetric.Name].Tags[k] = v
 		}
 
+		buckets[receivedMetric.Name].Tags["Source"] = receivedMetric.Host
+
 		handler(receivedMetric)
 
 		//create a meta-metric couting the number of metrics that are processed
 		if reportMetaStats {
 			//ensure that metametrics aren't reported as regular metrics
 			if receivedMetric.Name != "aggregated_metric_count" {
-				metastats := new(metric)
+				metastats := new(input.Metric)
 				metastats.Name = "aggregated_metric_count"
 				metastats.Sampling = 1
 				metastats.Type = "counter"
@@ -135,7 +130,7 @@ func processMetric(receivedMetric metric) {
 	}
 }
 
-func processEvent(receivedEvent event) {
+func processEvent(receivedEvent input.Event) {
 	if receivedEvent.Name == "" {
 		fmt.Println("Invalid event title")
 		return
@@ -156,7 +151,7 @@ func processEvent(receivedEvent event) {
 	_, ok := events[key]
 
 	if !ok {
-		events[key] = new(bucket)
+		events[key] = new(output.Bucket)
 		events[key].Name = receivedEvent.Name
 		events[key].Fields = make(map[string]interface{})
 		events[key].Tags = make(map[string]string)
@@ -178,7 +173,7 @@ func processEvent(receivedEvent event) {
 
 func flush() {
 
-	var bucketArray []bucket
+	var bucketArray []output.Bucket
 
 	if len(buckets) > 0 {
 		for _, v := range buckets {
@@ -192,17 +187,17 @@ func flush() {
 		}
 	}
 
-	if len(influxConfig.influxHost) > 0 {
-		client := configureInfluxDB(influxConfig)
-		writeInfluxDB(bucketArray, &client, influxConfig)
+	if len(influxConfig.InfluxHost) > 0 {
+		client := output.ConfigureInfluxDB(influxConfig)
+		output.WriteInfluxDB(bucketArray, &client, influxConfig)
 	}
 
 	if len(outputURL) > 0 {
-		writeJSON(bucketArray, outputURL)
+		output.WriteJSON(bucketArray, outputURL)
 	}
 
-	buckets = make(map[string]*bucket)
-	events = make(map[eventKey]*bucket)
+	buckets = make(map[string]*output.Bucket)
+	events = make(map[eventKey]*output.Bucket)
 
 }
 
@@ -219,12 +214,12 @@ func parseConfig(config string) {
 	outputUndefined := true
 
 	if viper.GetBool("outputInfluxDB") {
-		influxConfig = influxDBConfig{
-			influxHost:     viper.GetString("influxHost"),
-			influxPort:     viper.GetString("influxPort"),
-			influxUsername: viper.GetString("influxUsername"),
-			influxPassword: viper.GetString("influxPassword"),
-			influxDatabase: viper.GetString("influxDatabase"),
+		influxConfig = output.InfluxDBConfig{
+			InfluxHost:     viper.GetString("influxHost"),
+			InfluxPort:     viper.GetString("influxPort"),
+			InfluxUsername: viper.GetString("influxUsername"),
+			InfluxPassword: viper.GetString("influxPassword"),
+			InfluxDatabase: viper.GetString("influxDatabase"),
 		}
 		outputUndefined = false
 	}
@@ -244,12 +239,12 @@ func parseConfig(config string) {
 
 	if viper.GetBool("inputJSON") {
 		viper.SetDefault("HTTPPort", "8003")
-		go serveHTTP(viper.GetString("HTTPPort"))
+		go input.ServeHTTP(viper.GetString("HTTPPort"), metricsIn, eventsIn)
 	}
 
 	if viper.GetBool("inputDogStatsD") {
 		viper.SetDefault("UDPPort", "8125")
-		go serveUDP(viper.GetString("UDPPort"))
+		go input.ServeUDP(viper.GetString("UDPPort"), metricsIn, eventsIn)
 	}
 
 	viper.SetDefault("flushInterval", 10)
