@@ -52,6 +52,8 @@ func (handler *metricsHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Requ
 		fmt.Println("error parsing metric")
 		fmt.Println(err)
 	}
+
+	r.Body.Close()
 }
 
 //unmarshall json encoded events into event struct
