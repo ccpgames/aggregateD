@@ -15,6 +15,6 @@ func WriteJSON(buckets []Bucket, url string) {
 		req.Header.Set("Content-Type", "application/json")
 		client := &http.Client{}
 		client.Do(req)
-		defer req.Body.Close()
+		req.Body.Close()
 	}
 }
