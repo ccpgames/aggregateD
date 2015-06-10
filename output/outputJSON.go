@@ -1,20 +1,24 @@
 package output
 
 import (
-	"bytes"
 	"encoding/json"
 	"net/http"
+	"strings"
 )
 
 //WriteJSON POSTs the json encoded bucket to the defined URL
 func WriteJSON(buckets []Bucket, url string) {
 	for i := range buckets {
 		jsonStr, _ := json.Marshal(buckets[i])
-		req, _ := http.NewRequest("POST", url, bytes.NewBuffer(jsonStr))
-		req.Close = true
-		req.Header.Set("Content-Type", "application/json")
 		client := &http.Client{}
-		client.Do(req)
-		req.Body.Close()
+		request, _ := http.NewRequest("PUT", url, strings.NewReader(string(jsonStr)))
+		request.Header.Set("Content-Type", "application/json")
+		request.ContentLength = 23
+		response, err := client.Do(request)
+
+		if err == nil {
+			defer response.Body.Close()
+
+		}
 	}
 }
