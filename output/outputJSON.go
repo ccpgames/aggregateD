@@ -2,6 +2,7 @@ package output
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 )
@@ -13,12 +14,13 @@ func WriteJSON(buckets []Bucket, url string) {
 		client := &http.Client{}
 		request, _ := http.NewRequest("PUT", url, strings.NewReader(string(jsonStr)))
 		request.Header.Set("Content-Type", "application/json")
-		request.ContentLength = 23
 		response, err := client.Do(request)
 
 		if err == nil {
 			defer response.Body.Close()
-
+			fmt.Println(response)
+		} else {
+			fmt.Println(err)
 		}
 	}
 }
