@@ -14,7 +14,7 @@ func TestHistogramAggregation(t *testing.T) {
 			Type:      "histogram",
 			Value:     i,
 		}
-		processMetric(histogram1)
+		aggregateMetric(histogram1)
 	}
 
 	aggregatedCount := buckets["latency"].Fields["count"]
@@ -52,7 +52,7 @@ func TestGaugeAggregation(t *testing.T) {
 			Type:      "gauge",
 			Value:     i,
 		}
-		processMetric(gauge1)
+		aggregateMetric(gauge1)
 	}
 
 	gauge2 := input.Metric{
@@ -62,7 +62,7 @@ func TestGaugeAggregation(t *testing.T) {
 		Value:     1,
 	}
 
-	processMetric(gauge2)
+	aggregateMetric(gauge2)
 
 	aggregatedValue := buckets["load"].Fields["value"]
 
@@ -92,9 +92,9 @@ func TestCounterAggregation(t *testing.T) {
 		Type:      "counter",
 		Value:     -9,
 	}
-	processMetric(counter1)
-	processMetric(counter2)
-	processMetric(counter3)
+	aggregateMetric(counter1)
+	aggregateMetric(counter2)
+	aggregateMetric(counter3)
 
 	aggregatedValue := buckets["requests"].Fields["value"]
 
