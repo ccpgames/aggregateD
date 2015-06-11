@@ -18,7 +18,9 @@ type InfluxDBConfig struct {
 	InfluxDatabase string
 }
 
-//Bucket is a struct representing an aggregated series of metrics
+//Bucket is a struct representing an aggregated series of metrics.
+//It closely resembles the InfluxDB client.Point but has some other useful
+//fields
 type Bucket struct {
 	Name      string            `json:"name"`
 	Timestamp string            `json:"timestamp"`

@@ -12,28 +12,6 @@ import (
 	"github.com/spf13/viper"
 )
 
-// type metric struct {
-// 	Name      string
-// 	Host      string
-// 	Timestamp string
-// 	Type      string
-// 	Value     float64
-// 	Sampling  float64
-// 	Tags      map[string]string
-// }
-
-// type event struct {
-// 	Name           string
-// 	Text           string
-// 	Host           string
-// 	AggregationKey string
-// 	Priority       string
-// 	Timestamp      string
-// 	AlertType      string
-// 	Tags           map[string]string
-// 	SourceType     string
-// }
-
 //eventKey is used as the key in the map of events, this is needed as
 //the datadog docs specify that events are aggregated based on
 //‘hostname/event_type/source_type/aggregation_key’ and therefore
@@ -108,8 +86,6 @@ func aggregateMetric(receivedMetric input.Metric) {
 		for k, v := range receivedMetric.Tags {
 			buckets[receivedMetric.Name].Tags[k] = v
 		}
-
-		buckets[receivedMetric.Name].Tags["Source"] = receivedMetric.Host
 
 		handler(receivedMetric)
 
@@ -216,6 +192,7 @@ func parseConfig(config string) {
 	}
 
 	outputUndefined := true
+	inputUndefied := true
 
 	if viper.GetBool("outputInfluxDB") {
 		influxConfig = output.InfluxDBConfig{
@@ -233,10 +210,12 @@ func parseConfig(config string) {
 		outputUndefined = false
 	}
 
+	//if there is no where defined to submit metrics to, exit
 	if outputUndefined {
 		panic("No outputs defined")
 	}
 
+	//record the number of metrics and events that are handled as a metric
 	if viper.GetBool("reportMetaStats") {
 		reportMetaStats = true
 	}
@@ -244,15 +223,21 @@ func parseConfig(config string) {
 	if viper.GetBool("inputJSON") {
 		viper.SetDefault("HTTPPort", "8003")
 		go input.ServeHTTP(viper.GetString("HTTPPort"), metricsIn, eventsIn)
+		inputUndefied = false
 	}
 
 	if viper.GetBool("inputDogStatsD") {
 		viper.SetDefault("UDPPort", "8125")
 		go input.ServeUDP(viper.GetString("UDPPort"), metricsIn, eventsIn)
+		inputUndefied = false
 	}
 
-	viper.SetDefault("flushInterval", 10)
+	if inputUndefied {
+		panic("No inputs defined")
+	}
 
+	//default rate of writing aggregates is 10 seconds
+	viper.SetDefault("flushInterval", 10)
 	flushInterval = viper.GetInt("flushInterval")
 }
 

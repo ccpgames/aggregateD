@@ -46,7 +46,11 @@ func (handler *metricsHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Requ
 	err := decoder.Decode(&receivedMetric)
 
 	if err == nil {
-		receivedMetric.Host = r.Host
+		//add an aditional tag specifing the host which forwarded aggregateD the metric
+		//this might often be the same as the client specified host field but in situations
+		//where the client is behind NAT, i.e many EVE clients this information is useful.
+		receivedMetric.Tags["Source"] = r.Host
+
 		handler.metricsIn <- receivedMetric
 	} else {
 		fmt.Println("error parsing metric")
@@ -63,7 +67,7 @@ func (handler *eventsHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Reque
 	err := decoder.Decode(&receivedEvent)
 
 	if err == nil {
-		receivedEvent.Host = r.Host
+		receivedEvent.Tags["Source"] = r.Host
 		handler.eventsIn <- receivedEvent
 
 	} else {
