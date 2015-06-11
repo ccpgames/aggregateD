@@ -56,6 +56,9 @@ func ConfigureInfluxDB(config InfluxDBConfig) client.Client {
 }
 
 //WriteInfluxDB commits the buckets to InfluxDB
+//This should be compatable with the 0.9x releases of InfluxDB, as the 0.9 series is
+//still in beta, it is prone to change which might break this function as was the
+//case when Name was changed to Measurement in client.Point
 func WriteInfluxDB(buckets []Bucket, influxConnection *client.Client, config InfluxDBConfig) {
 	var (
 		points      = make([]client.Point, len(buckets))

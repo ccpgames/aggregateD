@@ -40,8 +40,6 @@ import (
 //a single string key is insuffient to refer to events
 type eventKey struct {
 	Name           string
-	Host           string
-	SourceType     string
 	AggregationKey string
 }
 
@@ -70,14 +68,16 @@ func aggregate() {
 		case <-t.C:
 			flush()
 		case receivedMetric := <-metricsIn:
-			processMetric(receivedMetric)
+			aggregateMetric(receivedMetric)
 		case receivedEvent := <-eventsIn:
-			processEvent(receivedEvent)
+			aggregateEvent(receivedEvent)
 		}
 	}
 }
 
-func processMetric(receivedMetric input.Metric) {
+//aggregate metrics into a single bucket, makes use of aggregators
+//to aggregate different metric types
+func aggregateMetric(receivedMetric input.Metric) {
 	//if a handler exists to aggregate the metric, do so
 	//otherwise ignore the metric
 	if receivedMetric.Name == "" {
@@ -114,6 +114,7 @@ func processMetric(receivedMetric input.Metric) {
 		handler(receivedMetric)
 
 		//create a meta-metric couting the number of metrics that are processed
+		//it's useful for debug purposes and tracking the performance of aggregateD
 		if reportMetaStats {
 			//ensure that metametrics aren't reported as regular metrics
 			if receivedMetric.Name != "aggregated_metric_count" {
@@ -130,7 +131,8 @@ func processMetric(receivedMetric input.Metric) {
 	}
 }
 
-func processEvent(receivedEvent input.Event) {
+//aggregate multiple events into one bucket
+func aggregateEvent(receivedEvent input.Event) {
 	if receivedEvent.Name == "" {
 		fmt.Println("Invalid event title")
 		return
@@ -142,9 +144,10 @@ func processEvent(receivedEvent input.Event) {
 		return
 	}
 
+	//an eventKey is used to index the map of events
+	//this allows the event name and the aggregation key to index events
+	//such that events with different aggregation keys are not aggregated
 	key := *(new(eventKey))
-	key.SourceType = receivedEvent.SourceType
-	key.Host = receivedEvent.Host
 	key.Name = receivedEvent.Name
 	key.AggregationKey = receivedEvent.AggregationKey
 
@@ -171,8 +174,8 @@ func processEvent(receivedEvent input.Event) {
 	}
 }
 
+//write out aggregated buckets to one or more outputs and
 func flush() {
-
 	var bucketArray []output.Bucket
 
 	if len(buckets) > 0 {
@@ -201,6 +204,7 @@ func flush() {
 
 }
 
+//read in a config file entitled aggregated.yaml or aggregated.json
 func parseConfig(config string) {
 	//viper accepts config file without extension, so remove extension
 	config = config[0:strings.Index(config, ".")]

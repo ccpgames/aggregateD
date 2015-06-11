@@ -8,6 +8,10 @@ import (
 )
 
 //WriteJSON POSTs the json encoded bucket to the defined URL
+//This is mostly intended to be used for diaganostic output but
+//can also be used to forward metrics to other services, it is
+//configured by setting outputJSON to true and outputURL to a
+//valid URL in the configuration file
 func WriteJSON(buckets []Bucket, url string) {
 	for i := range buckets {
 		jsonStr, _ := json.Marshal(buckets[i])

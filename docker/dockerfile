@@ -1,0 +1,31 @@
+#dockerfile to build a aggregateD docker image.
+#this image builds aggregateD from source. 
+FROM ubuntu
+MAINTAINER Jonathan Stuart Ward <se.jonathan@ccpgames.com>
+
+# Install software
+RUN apt-get install -y git curl
+
+#get aggregateD and latest go compiler
+RUN git clone https://github.com/ccpgames/aggregateD.git
+RUN curl -s https://go.googlecode.com/files/go1.2.linux-amd64.tar.gz | tar -v -C /usr/local/ -xz
+ENV PATH /usr/local/go/bin:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin
+
+#set go paths for go compiler
+ENV GOPATH /go
+ENV GOROOT /usr/local/go
+
+#compile aggregateD
+RUN go get github.com/ccpgames/aggregateD
+WORKDIR /go/src/github.com/ccpgames/aggregateD
+ADD . /go/src/github.com/ccpgames/aggregateD
+
+RUN go get
+
+RUN go build
+
+EXPOSE 8003
+
+#add config file for aggregateD
+ADD aggregated.yaml /
+ENTRYPOINT ./aggregateD -config /aggregated.yaml

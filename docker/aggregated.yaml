@@ -1,0 +1,9 @@
+#example YAML config which writes to an InfluxDB instance on localhost
+inputJSON: true
+outputInfluxDB: true
+reportMetaStats: true #report stats about how many metrics are processed
+influxHost: localhost
+influxPort: 8086
+influxUsername: root
+influxPassword: root
+influxDatabase: metrics
