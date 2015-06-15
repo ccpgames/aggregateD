@@ -49,6 +49,9 @@ func (handler *metricsHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Requ
 		//add an aditional tag specifing the host which forwarded aggregateD the metric
 		//this might often be the same as the client specified host field but in situations
 		//where the client is behind NAT, i.e many EVE clients this information is useful.
+		if receivedMetric.Tags == nil {
+			receivedMetric.Tags = make(map[string]string)
+		}
 		receivedMetric.Tags["Source"] = r.Host
 
 		handler.metricsIn <- receivedMetric
@@ -67,6 +70,9 @@ func (handler *eventsHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Reque
 	err := decoder.Decode(&receivedEvent)
 
 	if err == nil {
+		if receivedEvent.Tags == nil {
+			receivedEvent.Tags = make(map[string]string)
+		}
 		receivedEvent.Tags["Source"] = r.Host
 		handler.eventsIn <- receivedEvent
 
