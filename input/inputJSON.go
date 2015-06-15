@@ -52,7 +52,7 @@ func (handler *metricsHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Requ
 		if receivedMetric.Tags == nil {
 			receivedMetric.Tags = make(map[string]string)
 		}
-		receivedMetric.Tags["Source"] = r.Host
+		receivedMetric.Tags["Source"] = r.RemoteAddr
 
 		handler.metricsIn <- receivedMetric
 	} else {
@@ -73,7 +73,7 @@ func (handler *eventsHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Reque
 		if receivedEvent.Tags == nil {
 			receivedEvent.Tags = make(map[string]string)
 		}
-		receivedEvent.Tags["Source"] = r.Host
+		receivedEvent.Tags["Source"] = r.RemoteAddr
 		handler.eventsIn <- receivedEvent
 
 	} else {
