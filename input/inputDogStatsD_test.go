@@ -1,7 +1,6 @@
 package input
 
 import (
-	"fmt"
 	"testing"
 )
 
@@ -39,13 +38,11 @@ func TestMetricParse(t *testing.T) {
 	}
 
 	v1 := result.Tags["tag2"]
-	fmt.Println(result.Tags)
 	if v1 != "second" {
 		t.Error("value of tag1 was expected to be second got", v1)
 	}
 
 	v3 := result.Tags["tag3"]
-	fmt.Println(result.Tags)
 	if v3 != "third" {
 		t.Error("value of tag3 was expected to be third got", v3)
 	}
