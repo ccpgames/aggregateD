@@ -57,7 +57,7 @@ func TestValidMetric(t *testing.T) {
 //metrics and events correctly and without loss or alternation
 func TestMultipleMetrics(t *testing.T) {
 	sentValuesSum := 0.0
-	for i := 0; i < 1; i++ {
+	for i := 0; i < 100; i++ {
 		testMetric := new(Metric)
 		testMetric.Host = "fakehost.example.org"
 		testMetric.Name = "fakemetric"
@@ -79,7 +79,7 @@ func TestMultipleMetrics(t *testing.T) {
 	time.Sleep(300 * time.Millisecond)
 
 	recievedValuesSum := 0.0
-	for i := 0; i < 1; i++ {
+	for i := 0; i < 100; i++ {
 		receivedMetric := <-metricsIn
 		recievedValuesSum += receivedMetric.Value
 	}

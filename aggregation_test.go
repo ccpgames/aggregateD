@@ -1,12 +1,15 @@
 package main
 
 import (
+	"fmt"
+	"math/rand"
 	"testing"
+	"time"
 
 	"github.com/ccpgames/aggregateD/input"
 )
 
-func TestHistogramAggregation(t *testing.T) {
+func TestHistogramAggregator(t *testing.T) {
 	for i := 0.0; i < 101; i++ {
 		histogram1 := input.Metric{
 			Name:      "latency",
@@ -44,7 +47,7 @@ func TestHistogramAggregation(t *testing.T) {
 	}
 
 }
-func TestGaugeAggregation(t *testing.T) {
+func TestGaugeAggregator(t *testing.T) {
 	for i := 0.0; i < 100; i++ {
 		gauge1 := input.Metric{
 			Name:      "load",
@@ -71,7 +74,7 @@ func TestGaugeAggregation(t *testing.T) {
 	}
 }
 
-func TestCounterAggregation(t *testing.T) {
+func TestCounterAggregator(t *testing.T) {
 	counter1 := input.Metric{
 		Name:      "requests",
 		Timestamp: "2015-05-12T14:49:32",
@@ -100,5 +103,51 @@ func TestCounterAggregation(t *testing.T) {
 
 	if aggregatedValue != 51.0 {
 		t.Error("Expected 51, got ", aggregatedValue)
+	}
+}
+
+func TestAggregateMetrics(t *testing.T) {
+	expectedCounterValue := 0.0
+	expectedGaugeValue := 0.0
+
+	counter := new(input.Metric)
+	counter.Host = "fakehost.example.org"
+	counter.Name = "fakecounter"
+	counter.Sampling = 1
+	counter.Tags = make(map[string]string)
+	counter.Type = "counter"
+
+	gauge := new(input.Metric)
+	gauge.Host = "fakehost.example.org"
+	gauge.Name = "fakegauge"
+	gauge.Sampling = 1
+	gauge.Tags = make(map[string]string)
+	gauge.Type = "gauge"
+
+	for i := 0; i < 100; i++ {
+		counter.Timestamp = time.Now().Format("2006-01-02 15:04:05 -0700")
+		gauge.Timestamp = time.Now().Format("2006-01-02 15:04:05 -0700")
+
+		counter.Value = float64(rand.Int())
+		gauge.Value = rand.Float64()
+		expectedCounterValue += counter.Value
+		expectedGaugeValue = gauge.Value
+
+		aggregateMetric(*counter)
+		aggregateMetric(*gauge)
+
+	}
+
+	counterValue := buckets["fakecounter"].Fields["value"]
+	if counterValue != expectedCounterValue {
+		t.Error("Actual value does not match expected value of aggregated counter")
+	}
+
+	gaugeValue := buckets["fakegauge"].Fields["value"]
+	if gaugeValue != expectedGaugeValue {
+		fmt.Println(gaugeValue)
+		fmt.Println(expectedGaugeValue)
+
+		t.Error("Actual value does not match expected value of aggregated gauge")
 	}
 }
