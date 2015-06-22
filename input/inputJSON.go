@@ -7,37 +7,39 @@ import (
 	"net/http"
 )
 
-//Metric represnts a single time series point
-type Metric struct {
-	Name      string
-	Host      string
-	Timestamp string
-	Type      string
-	Value     float64
-	Sampling  float64
-	Tags      map[string]string
-}
+type (
+	//Metric represnts a single time series point
+	Metric struct {
+		Name      string
+		Host      string
+		Timestamp string
+		Type      string
+		Value     float64
+		Sampling  float64
+		Tags      map[string]string
+	}
 
-//Event represents a single event instance
-type Event struct {
-	Name           string
-	Text           string
-	Host           string
-	AggregationKey string
-	Priority       string
-	Timestamp      string
-	AlertType      string
-	Tags           map[string]string
-	SourceType     string
-}
+	//Event represents a single event instance
+	Event struct {
+		Name           string
+		Text           string
+		Host           string
+		AggregationKey string
+		Priority       string
+		Timestamp      string
+		AlertType      string
+		Tags           map[string]string
+		SourceType     string
+	}
 
-type metricsHTTPHandler struct {
-	metricsIn chan Metric
-}
+	metricsHTTPHandler struct {
+		metricsIn chan Metric
+	}
 
-type eventsHTTPHandler struct {
-	eventsIn chan Event
-}
+	eventsHTTPHandler struct {
+		eventsIn chan Event
+	}
+)
 
 //http handler function, unmarshalls json encoded metric into metric struct
 func (handler *metricsHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {

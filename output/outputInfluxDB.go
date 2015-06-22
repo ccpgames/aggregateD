@@ -9,26 +9,28 @@ import (
 	"github.com/influxdb/influxdb/client"
 )
 
-//InfluxDBConfig describes the configuration details for Influx connection
-type InfluxDBConfig struct {
-	InfluxHost     string
-	InfluxPort     string
-	InfluxUsername string
-	InfluxPassword string
-	InfluxDatabase string
-}
+type (
+	//InfluxDBConfig describes the configuration details for Influx connection
+	InfluxDBConfig struct {
+		InfluxHost     string
+		InfluxPort     string
+		InfluxUsername string
+		InfluxPassword string
+		InfluxDatabase string
+	}
 
-//Bucket is a struct representing an aggregated series of metrics.
-//It closely resembles the InfluxDB client.Point but has some other useful
-//fields
-type Bucket struct {
-	Name      string            `json:"name"`
-	Timestamp string            `json:"timestamp"`
-	Tags      map[string]string `json:"tags"`
-	//intermediate values for histograms, only fields are sent to influxdb
-	Values []float64              `json:"-"`
-	Fields map[string]interface{} `json:"fields"`
-}
+	//Bucket is a struct representing an aggregated series of metrics.
+	//It closely resembles the InfluxDB client.Point but has some other useful
+	//fields
+	Bucket struct {
+		Name      string            `json:"name"`
+		Timestamp string            `json:"timestamp"`
+		Tags      map[string]string `json:"tags"`
+		//intermediate values for histograms, only fields are sent to influxdb
+		Values []float64              `json:"-"`
+		Fields map[string]interface{} `json:"fields"`
+	}
+)
 
 //ConfigureInfluxDB takes a struct describing the influx config and returns a Influx connection
 func ConfigureInfluxDB(config InfluxDBConfig) client.Client {
