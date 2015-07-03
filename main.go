@@ -183,6 +183,9 @@ func flush() {
 //read in a config file entitled aggregated.yaml or aggregated.json
 func parseConfig(config string) {
 	//viper accepts config file without extension, so remove extension
+	if config == "" {
+		panic("No configuraiton file provided")
+	}
 	config = config[0:strings.Index(config, ".")]
 	viper.SetConfigName(config)
 	err := viper.ReadInConfig()
@@ -242,7 +245,7 @@ func parseConfig(config string) {
 }
 
 func main() {
-	config := flag.String("config", " ", "configuration file")
+	config := flag.String("config", "", "configuration file")
 	flag.Parse()
 
 	parseConfig(*config)
