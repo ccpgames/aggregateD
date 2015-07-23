@@ -35,10 +35,11 @@ func ServeStatD(port string, metricsIn chan Metric) string {
 		for _, metric := range metrics {
 			parsedMetric, err := parseStatDMetric(metric)
 
-			if err != nil {
+			if err == nil {
 				//add tag to metric denoting its point of origin
 				parsedMetric.Timestamp = time.Now().Format("2006-01-02 15:04:05 -0700")
 				metricsIn <- parsedMetric
+				fmt.Println(parsedMetric.Type)
 			}
 		}
 
@@ -51,7 +52,7 @@ func splitStatsDMessages(messages string) []string {
 	newline := strings.Index(messages, "\n")
 
 	for newline != -1 {
-		message := messages[0 : newline-1]
+		message := messages[0:newline]
 		splitMessages = append(splitMessages, message)
 		messages = messages[newline+1 : len(messages)]
 		newline = strings.Index(messages, "\n")
@@ -102,7 +103,7 @@ func parseStatDMetric(message string) (Metric, error) {
 		metric.Sampling = floatSampleRate
 	}
 
-	switch string(metricType[:len(metricType)]) {
+	switch string(metricType) {
 	case "ms":
 		metric.Type = "timer"
 	case "g":

@@ -3,10 +3,14 @@ package input
 import "testing"
 
 func TestValidMessage(t *testing.T) {
-	metric, _ := parseStatDMetric("example1:1|c|@0.1")
+	metric, _ := parseStatDMetric("vault.runtime.free_count:315926.000000|g")
 
-	if metric.Name != "example1" {
-		t.Error("Metric name should be example1, got", metric.Name)
+	if metric.Name != "vault.runtime.free_count" {
+		t.Error("Metric name should be vault.runtime.free_count, got", metric.Name)
+	}
+
+	if metric.Type != "gauge" {
+		t.Error("Metric type should be gauge, got", metric.Type)
 	}
 }
 
