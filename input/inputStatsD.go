@@ -59,6 +59,7 @@ func splitStatsDMessages(messages string) []string {
 
 	if len(messages) > 0 {
 		splitMessages = append(splitMessages, messages)
+
 	}
 
 	return splitMessages
@@ -75,7 +76,7 @@ func parseStatDMetric(message string) (Metric, error) {
 		return Metric{}, errors.New("unable to parse name from statsD message")
 	}
 
-	metric.Name = string(message[colonIndex-1])
+	metric.Name = string(message[:colonIndex])
 	stringValue := message[colonIndex+1 : ibarIndex]
 	floatValue, err := strconv.ParseFloat(stringValue, 64)
 	metric.Value = floatValue
