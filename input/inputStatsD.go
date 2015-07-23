@@ -26,7 +26,6 @@ func ServeStatD(port string, metricsIn chan Metric) string {
 	for {
 		rlen, _, _ := sock.ReadFromUDP(buf[:])
 		message := string(buf[:rlen])
-		source := sock.RemoteAddr()
 		//a single statsD message can contain multiple metrics
 		//split and then interate through each to parse and submit
 		//for aggregategation
@@ -37,9 +36,6 @@ func ServeStatD(port string, metricsIn chan Metric) string {
 
 			if err != nil {
 				//add tag to metric denoting its point of origin
-				parsedMetric.Tags = make(map[string]string)
-				parsedMetric.Tags["Source"] = source.String()
-
 				metricsIn <- parsedMetric
 			}
 		}

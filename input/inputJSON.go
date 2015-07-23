@@ -70,7 +70,7 @@ func (handler *eventsHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Reque
 	decoder := json.NewDecoder(r.Body)
 	var receivedEvent Event
 	err := decoder.Decode(&receivedEvent)
-	fmt.Println(receivedEvent.Text)
+
 	if err == nil {
 		if receivedEvent.Tags == nil {
 			receivedEvent.Tags = make(map[string]string)
@@ -80,7 +80,6 @@ func (handler *eventsHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Reque
 
 	} else {
 		fmt.Println("error parsing event")
-		fmt.Println(err)
 	}
 
 	r.Body.Close()
