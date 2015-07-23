@@ -39,7 +39,6 @@ func ServeStatD(port string, metricsIn chan Metric) string {
 				//add tag to metric denoting its point of origin
 				parsedMetric.Timestamp = time.Now().Format("2006-01-02 15:04:05 -0700")
 				metricsIn <- parsedMetric
-				fmt.Println(parsedMetric.Type)
 			}
 		}
 
