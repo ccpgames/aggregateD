@@ -8,11 +8,11 @@ import (
 	"time"
 )
 
-//ServeUDP serves the dogstatsD protocol over UDP
+//ServeDogStatsD serves the dogstatsD protocol over UDP
 //This allows clients which are already instrumented with dogstatsD clients
 //to use aggregateD and the CCP metrics stack without any mododification beyond
 //providing an alternative IP address.
-func ServeUDP(port string, metricsIn chan Metric, eventsIn chan Event) string {
+func ServeDogStatsD(port string, metricsIn chan Metric, eventsIn chan Event) string {
 	var buf [1024]byte
 	addr, err := net.ResolveUDPAddr("udp", ":"+port)
 
@@ -74,7 +74,11 @@ func parseDogStatsDMetric(message string) (Metric, error) {
 		return Metric{}, errors.New("unable to parse DogStatsD message")
 	}
 
-	floatSampleRate, _ := strconv.ParseFloat(sampleRate, 64)
+	floatSampleRate, err := strconv.ParseFloat(sampleRate, 64)
+
+	if err != nil {
+		return Metric{}, errors.New("unable to parse DogStatsD value")
+	}
 
 	t := time.Now()
 

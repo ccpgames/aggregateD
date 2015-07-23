@@ -231,7 +231,13 @@ func parseConfig(config string) {
 
 	if viper.GetBool("inputDogStatsD") {
 		viper.SetDefault("UDPPort", "8125")
-		go input.ServeUDP(viper.GetString("UDPPort"), metricsIn, eventsIn)
+		go input.ServeDogStatsD(viper.GetString("UDPPort"), metricsIn, eventsIn)
+		inputUndefied = false
+	}
+
+	if viper.GetBool("inputStatsD") {
+		viper.SetDefault("UDPPort", "8125")
+		go input.ServeStatD(viper.GetString("UDPPort"), metricsIn)
 		inputUndefied = false
 	}
 
