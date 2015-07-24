@@ -79,7 +79,7 @@ func (handler *eventsHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Reque
 		handler.eventsIn <- receivedEvent
 
 	} else {
-		fmt.Println("error parsing event")
+		//fmt.Println("error parsing event")
 	}
 
 	r.Body.Close()

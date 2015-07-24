@@ -41,7 +41,6 @@ func ServeStatD(port string, metricsIn chan Metric) string {
 				metricsIn <- parsedMetric
 			}
 		}
-
 	}
 }
 
@@ -110,7 +109,6 @@ func parseStatDMetric(message string) (Metric, error) {
 	case "c":
 		metric.Type = "counter"
 	default:
-		fmt.Println(metricType)
 		err = fmt.Errorf("invalid metric type: %q", metricType)
 		return metric, err
 	}
