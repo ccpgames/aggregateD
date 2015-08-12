@@ -1,0 +1,17 @@
+inputJSON: true
+inputStatsD: true
+
+#outputJSON: true
+#outputURL: http://localhost:8080/
+
+outputInfluxDB: true
+
+influx:
+    influxHost: 10.12.2.72
+    influxPort: 8086
+    influxUsername: root
+    influxPassword: root
+    influxDatabase: metrics
+
+
+reportMetaStats: true

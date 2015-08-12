@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
@@ -12,11 +13,11 @@ import (
 //can also be used to forward metrics to other services, it is
 //configured by setting outputJSON to true and outputURL to a
 //valid URL in the configuration file
-func WriteJSON(buckets []Bucket, url string) {
+func WriteJSON(buckets []Bucket, outputURL url.URL) {
 	for i := range buckets {
 		jsonStr, _ := json.Marshal(buckets[i])
 		client := &http.Client{}
-		request, _ := http.NewRequest("PUT", url, strings.NewReader(string(jsonStr)))
+		request, _ := http.NewRequest("PUT", outputURL.String(), strings.NewReader(string(jsonStr)))
 		request.Header.Set("Content-Type", "application/json")
 		response, err := client.Do(request)
 
