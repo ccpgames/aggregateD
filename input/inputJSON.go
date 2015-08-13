@@ -10,13 +10,14 @@ import (
 type (
 	//Metric represents a single time series point
 	Metric struct {
-		Name      string
-		Host      string
-		Timestamp string
-		Type      string
-		Value     float64
-		Sampling  float64
-		Tags      map[string]string
+		Name       string
+		Host       string
+		Timestamp  string
+		Type       string
+		Value      float64
+		Sampling   float64
+		RoutingKey string
+		Tags       map[string]string
 	}
 
 	//Event represents a single event instance
@@ -29,6 +30,7 @@ type (
 		Timestamp      string
 		AlertType      string
 		Tags           map[string]string
+		RoutingKey     string
 		SourceType     string
 	}
 

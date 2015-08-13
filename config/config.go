@@ -49,13 +49,38 @@ func ParseConfig(rawConfig []byte, metricsIn chan input.Metric, eventsIn chan in
 
 	if viper.GetBool("outputInfluxDB") {
 		parsedConfig.InfluxConfig = output.InfluxDBConfig{
-			InfluxHost:     viper.GetString("influx.influxHost"),
-			InfluxPort:     viper.GetString("influx.influxPort"),
-			InfluxUsername: viper.GetString("influx.influxUsername"),
-			InfluxPassword: viper.GetString("influx.influxPassword"),
-			InfluxDatabase: viper.GetString("influx.influxDatabase"),
+			InfluxHost:      viper.GetString("influx.host"),
+			InfluxPort:      viper.GetString("influx.port"),
+			InfluxUsername:  viper.GetString("influx.username"),
+			InfluxPassword:  viper.GetString("influx.password"),
+			InfluxDatabases: viper.GetStringSlice("influx.databases"),
+			InfluxDefaultDB: viper.GetString("influx.defaultDB"),
 		}
 		outputUndefined = false
+	}
+
+	if (len(parsedConfig.InfluxConfig.InfluxHost)) == 0 {
+		panic("InfluxDB host undefined")
+	}
+
+	if (len(parsedConfig.InfluxConfig.InfluxPort)) == 0 {
+		panic("InfluxDB port undefined")
+	}
+
+	if (len(parsedConfig.InfluxConfig.InfluxUsername)) == 0 {
+		panic("InfluxDB username undefined")
+	}
+
+	if (len(parsedConfig.InfluxConfig.InfluxPassword)) == 0 {
+		panic("InfluxDB password undefined")
+	}
+
+	if (len(parsedConfig.InfluxConfig.InfluxDatabases)) == 0 {
+		panic("InfluxDB databases undefined")
+	}
+
+	if (len(parsedConfig.InfluxConfig.InfluxDefaultDB)) == 0 {
+		panic("InfluxDB default db undefined")
 	}
 
 	if viper.GetBool("outputJSON") {

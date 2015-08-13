@@ -92,6 +92,7 @@ func aggregateMetric(receivedMetric input.Metric) {
 			buckets[key].Name = receivedMetric.Name
 			buckets[key].Fields = make(map[string]interface{})
 			buckets[key].Tags = make(map[string]string)
+			buckets[key].Database = receivedMetric.RoutingKey
 		}
 
 		//aggregate tags
@@ -148,6 +149,8 @@ func aggregateEvent(receivedEvent input.Event) {
 		events[key].Name = receivedEvent.Name
 		events[key].Fields = make(map[string]interface{})
 		events[key].Tags = make(map[string]string)
+		events[key].Database = receivedEvent.RoutingKey
+
 	}
 
 	events[key].Fields["name"] = receivedEvent.Name
@@ -166,26 +169,40 @@ func aggregateEvent(receivedEvent input.Event) {
 
 //write out aggregated buckets to one or more outputs and
 func flush() {
-	var bucketArray []output.Bucket
 
-	if len(buckets) > 0 {
-		for _, v := range buckets {
-			bucketArray = append(bucketArray, *v)
-		}
-	}
-
-	if len(events) > 0 {
-		for _, v := range events {
-			bucketArray = append(bucketArray, *v)
-		}
-	}
+	bucketDBMap := make(map[string][]output.Bucket)
 
 	if len(configuration.InfluxConfig.InfluxHost) > 0 {
-		client := output.ConfigureInfluxDB(configuration.InfluxConfig)
-		output.WriteInfluxDB(bucketArray, &client, configuration.InfluxConfig)
+		for _, metric := range buckets {
+
+			if metric.Database == "" {
+				metric.Database = configuration.InfluxConfig.InfluxDefaultDB
+			}
+
+			bucketDBMap[metric.Database] = append(bucketDBMap[metric.Database], *metric)
+		}
+
+		for _, event := range events {
+			if event.Database == "" {
+				event.Database = configuration.InfluxConfig.InfluxDefaultDB
+			}
+
+			bucketDBMap[event.Database] = append(bucketDBMap[event.Database], *event)
+		}
+
+		output.WriteToInfluxDB(bucketDBMap, configuration.InfluxConfig)
 	}
 
 	if len(configuration.JSONOutputURL.String()) > 0 {
+		var bucketArray []output.Bucket
+		for _, v := range buckets {
+			bucketArray = append(bucketArray, *v)
+		}
+
+		for _, v := range events {
+			bucketArray = append(bucketArray, *v)
+		}
+
 		output.WriteJSON(bucketArray, configuration.JSONOutputURL)
 	}
 

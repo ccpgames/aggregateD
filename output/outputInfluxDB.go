@@ -12,11 +12,12 @@ import (
 type (
 	//InfluxDBConfig describes the configuration details for Influx connection
 	InfluxDBConfig struct {
-		InfluxHost     string
-		InfluxPort     string
-		InfluxUsername string
-		InfluxPassword string
-		InfluxDatabase string
+		InfluxHost      string
+		InfluxPort      string
+		InfluxUsername  string
+		InfluxPassword  string
+		InfluxDatabases []string
+		InfluxDefaultDB string
 	}
 
 	//Bucket is a struct representing an aggregated series of metrics.
@@ -26,14 +27,25 @@ type (
 		Name      string            `json:"name"`
 		Timestamp string            `json:"timestamp"`
 		Tags      map[string]string `json:"tags"`
+		Database  string
 		//intermediate values for histograms, only fields are sent to influxdb
 		Values []float64              `json:"-"`
 		Fields map[string]interface{} `json:"fields"`
 	}
 )
 
+//WriteToInfluxDB takes a map of bucket slices, indexed by database and writes
+//each of those slices to InfluxDB as batch points
+func WriteToInfluxDB(bucketDBMap map[string][]Bucket, config InfluxDBConfig) {
+	client := configureInfluxDB(config)
+
+	for k, v := range bucketDBMap {
+		writeInfluxDB(v, &client, k)
+	}
+}
+
 //ConfigureInfluxDB takes a struct describing the influx config and returns a Influx connection
-func ConfigureInfluxDB(config InfluxDBConfig) client.Client {
+func configureInfluxDB(config InfluxDBConfig) client.Client {
 
 	influxURL, err := url.Parse(fmt.Sprintf("http://%s:%s", config.InfluxHost, config.InfluxPort))
 	if err != nil {
@@ -63,7 +75,7 @@ func ConfigureInfluxDB(config InfluxDBConfig) client.Client {
 //This should be compatable with the 0.9x releases of InfluxDB, as the 0.9 series is
 //still in beta, it is prone to change which might break this function as was the
 //case when Name was changed to Measurement in client.Point
-func WriteInfluxDB(buckets []Bucket, influxConnection *client.Client, config InfluxDBConfig) {
+func writeInfluxDB(buckets []Bucket, influxConnection *client.Client, database string) {
 	var (
 		points      = make([]client.Point, len(buckets))
 		pointsIndex = 0
@@ -84,7 +96,7 @@ func WriteInfluxDB(buckets []Bucket, influxConnection *client.Client, config Inf
 
 	pointsBatch := client.BatchPoints{
 		Points:          points,
-		Database:        config.InfluxDatabase,
+		Database:        database,
 		RetentionPolicy: "default",
 	}
 

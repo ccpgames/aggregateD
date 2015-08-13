@@ -7,11 +7,12 @@ inputStatsD: true
 outputInfluxDB: true
 
 influx:
-    influxHost: 10.12.2.72
-    influxPort: 8086
-    influxUsername: root
-    influxPassword: root
-    influxDatabase: metrics
+    host: 10.12.2.72
+    port: 8086
+    username: root
+    password: root
+    defaultDB: metrics
+    databases: [metrics]
 
 
 reportMetaStats: true
