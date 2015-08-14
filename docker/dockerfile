@@ -6,8 +6,7 @@ RUN apt-get install -y wget
 
 RUN mkdir /opt/aggregateD
 RUN ls /opt
-RUN wget  -O /opt/aggregateD/aggregateD https://github.com/ccpgames/aggregateD/releases/download/0.1/aggregateD-linux-x64
-RUN ls /opt
+RUN wget  -O /opt/aggregateD/aggregateD https://github.com/ccpgames/aggregateD/releases/download/0.2/aggregateD-Linux-x86_64
 EXPOSE 8003
 
 ADD aggregated.yaml /opt/aggregateD/
