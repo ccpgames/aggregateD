@@ -53,7 +53,6 @@ func ParseConfig(rawConfig []byte, metricsIn chan input.Metric, eventsIn chan in
 			InfluxPort:      viper.GetString("influx.port"),
 			InfluxUsername:  viper.GetString("influx.username"),
 			InfluxPassword:  viper.GetString("influx.password"),
-			InfluxDatabases: viper.GetStringSlice("influx.databases"),
 			InfluxDefaultDB: viper.GetString("influx.defaultDB"),
 		}
 		outputUndefined = false
@@ -73,10 +72,6 @@ func ParseConfig(rawConfig []byte, metricsIn chan input.Metric, eventsIn chan in
 
 	if (len(parsedConfig.InfluxConfig.InfluxPassword)) == 0 {
 		panic("InfluxDB password undefined")
-	}
-
-	if (len(parsedConfig.InfluxConfig.InfluxDatabases)) == 0 {
-		panic("InfluxDB databases undefined")
 	}
 
 	if (len(parsedConfig.InfluxConfig.InfluxDefaultDB)) == 0 {

@@ -21,17 +21,21 @@ type (
 		AggregationKey string
 	}
 
+	//metricKey is used to index the map of metrics, this is used in liue of metric
+	//names as doing so would risk unrelated metrics which share the same name being aggregated
+	//the metric key ensures that metrics with the same name, tags and secondary data are aggregated.
 	metricKey struct {
-		Name string
-		Tags string
+		Name          string
+		Tags          string
+		SecondaryData string
 	}
 )
 
 var (
-	metricsIn = make(chan input.Metric, 10000)
-	eventsIn  = make(chan input.Event, 10000)
-	buckets   = make(map[metricKey]*output.Bucket)
-	events    = make(map[eventKey]*output.Bucket)
+	metricsIn     = make(chan input.Metric, 10000)
+	eventsIn      = make(chan input.Event, 10000)
+	metricBuckets = make(map[metricKey]*output.Bucket)
+	eventBuckets  = make(map[eventKey]*output.Bucket)
 
 	configuration config.Configuration
 
@@ -63,7 +67,7 @@ func aggregateMetric(receivedMetric input.Metric) {
 	//if a handler exists to aggregate the metric, do so
 	//otherwise ignore the metric
 	if receivedMetric.Name == "" {
-		fmt.Println("Invalid metric name")
+		fmt.Println("Invalid msetric name")
 		return
 	} else if receivedMetric.Timestamp == "" {
 		fmt.Println("Invalid timestamp")
@@ -73,33 +77,28 @@ func aggregateMetric(receivedMetric input.Metric) {
 		return
 	}
 
+	/*this is a bit of a hack, in order to compare tags and ensure that metrics with
+	distinct tags and secondary data are not aggregated they are used as part of the key. Unfortunately
+	go doesn't allow for maps to be used in a key, therefore we serialise the map
+	to a json string and use that instead of the map. Sorry. */
 	if handler, ok := aggregators[receivedMetric.Type]; ok {
 		key := *(new(metricKey))
 		key.Name = receivedMetric.Name
 
-		//this is a bit of a hack, in order to compare tags and ensure that metrics with
-		//distinct tags are not aggregated, tags are used as part of the key. Unfortunately
-		//go doesn't allow for maps to be used in a key, therefore we serialise the map
-		//to a json string and use that instead of the map. Sorry.
-		jsonMap, _ := json.Marshal(receivedMetric.Tags)
-		key.Tags = string(jsonMap)
+		jsonTagMap, _ := json.Marshal(receivedMetric.Tags)
+		jsonSecondaryDataMap, _ := json.Marshal(receivedMetric.SecondaryData)
 
-		_, ok := buckets[key]
+		key.Tags = string(jsonTagMap)
+		key.SecondaryData = string(jsonSecondaryDataMap)
+
+		_, ok := metricBuckets[key]
 
 		//if bucket doesn't exist, create one
 		if !ok {
-			buckets[key] = new(output.Bucket)
-			buckets[key].Name = receivedMetric.Name
-			buckets[key].Fields = make(map[string]interface{})
-			buckets[key].Tags = make(map[string]string)
-			buckets[key].Database = receivedMetric.RoutingKey
-		}
-
-		//aggregate tags
-		//this results in the aggregated metric having the tags from the last metric
-		//maybe not best, think about alternative approaches
-		for k, v := range receivedMetric.Tags {
-			buckets[key].Tags[k] = v
+			metricBuckets[key] = new(output.Bucket)
+			metricBuckets[key].Name = receivedMetric.Name
+			metricBuckets[key].Fields = receivedMetric.SecondaryData
+			metricBuckets[key].Tags = make(map[string]string)
 		}
 
 		handler(receivedMetric, key)
@@ -142,72 +141,63 @@ func aggregateEvent(receivedEvent input.Event) {
 	key.Name = receivedEvent.Name
 	key.AggregationKey = receivedEvent.AggregationKey
 
-	_, ok := events[key]
+	_, ok := eventBuckets[key]
 
 	if !ok {
-		events[key] = new(output.Bucket)
-		events[key].Name = receivedEvent.Name
-		events[key].Fields = make(map[string]interface{})
-		events[key].Tags = make(map[string]string)
-		events[key].Database = receivedEvent.RoutingKey
+		eventBuckets[key] = new(output.Bucket)
+		eventBuckets[key].Name = receivedEvent.Name
+		eventBuckets[key].Fields = make(map[string]interface{})
+		eventBuckets[key].Tags = make(map[string]string)
 
 	}
 
-	events[key].Fields["name"] = receivedEvent.Name
-	events[key].Fields["text"] = receivedEvent.Text
-	events[key].Fields["host"] = receivedEvent.Host
-	events[key].Fields["aggregation_key"] = receivedEvent.AggregationKey
-	events[key].Fields["priority"] = receivedEvent.Priority
-	events[key].Fields["alert_type"] = receivedEvent.AlertType
+	eventBuckets[key].Fields["name"] = receivedEvent.Name
+	eventBuckets[key].Fields["text"] = receivedEvent.Text
+	eventBuckets[key].Fields["host"] = receivedEvent.Host
+	eventBuckets[key].Fields["aggregation_key"] = receivedEvent.AggregationKey
+	eventBuckets[key].Fields["priority"] = receivedEvent.Priority
+	eventBuckets[key].Fields["alert_type"] = receivedEvent.AlertType
 
-	events[key].Timestamp = receivedEvent.Timestamp
+	eventBuckets[key].Timestamp = receivedEvent.Timestamp
 
 	for k, v := range receivedEvent.Tags {
-		events[key].Tags[k] = v
+		eventBuckets[key].Tags[k] = v
 	}
 }
 
-//write out aggregated buckets to one or more outputs and
+//write out aggregated buckets to one or more outputs and clear the metric and event
+//dictionaries
 func flush() {
 
-	bucketDBMap := make(map[string][]output.Bucket)
-
 	if len(configuration.InfluxConfig.InfluxHost) > 0 {
-		for _, metric := range buckets {
+		outputBuckets := make([]output.Bucket, 0, len(metricBuckets)+len(eventBuckets))
 
-			if metric.Database == "" {
-				metric.Database = configuration.InfluxConfig.InfluxDefaultDB
-			}
-
-			bucketDBMap[metric.Database] = append(bucketDBMap[metric.Database], *metric)
+		for _, metric := range metricBuckets {
+			outputBuckets = append(outputBuckets, *metric)
 		}
 
-		for _, event := range events {
-			if event.Database == "" {
-				event.Database = configuration.InfluxConfig.InfluxDefaultDB
-			}
-
-			bucketDBMap[event.Database] = append(bucketDBMap[event.Database], *event)
+		for _, event := range eventBuckets {
+			outputBuckets = append(outputBuckets, *event)
 		}
 
-		output.WriteToInfluxDB(bucketDBMap, configuration.InfluxConfig)
+		output.WriteToInfluxDB(outputBuckets, configuration.InfluxConfig, configuration.InfluxConfig.InfluxDefaultDB)
 	}
 
 	if len(configuration.JSONOutputURL.String()) > 0 {
 		var bucketArray []output.Bucket
-		for _, v := range buckets {
+		for _, v := range metricBuckets {
 			bucketArray = append(bucketArray, *v)
 		}
 
-		for _, v := range events {
+		for _, v := range eventBuckets {
 			bucketArray = append(bucketArray, *v)
 		}
 
 		output.WriteJSON(bucketArray, configuration.JSONOutputURL)
 	}
 
-	buckets = make(map[metricKey]*output.Bucket)
-	events = make(map[eventKey]*output.Bucket)
+	metricBuckets = make(map[metricKey]*output.Bucket)
+	eventBuckets = make(map[eventKey]*output.Bucket)
 
 }
 

@@ -8,21 +8,21 @@ import (
 )
 
 func gaugeAggregator(receivedMetric input.Metric, key metricKey) {
-	_, ok := buckets[key].Fields["value"]
+	_, ok := metricBuckets[key].Fields["value"]
 
 	if !ok {
-		buckets[key].Fields["value"] = 0
+		metricBuckets[key].Fields["value"] = 0
 	}
 
-	buckets[key].Timestamp = receivedMetric.Timestamp
-	buckets[key].Fields["value"] = receivedMetric.Value
+	metricBuckets[key].Timestamp = receivedMetric.Timestamp
+	metricBuckets[key].Fields["value"] = receivedMetric.Value
 }
 
 func counterAggregator(receivedMetric input.Metric, key metricKey) {
-	_, ok := buckets[key].Fields["value"]
+	_, ok := metricBuckets[key].Fields["value"]
 
 	if !ok {
-		buckets[key].Fields["value"] = 0.0
+		metricBuckets[key].Fields["value"] = 0.0
 	}
 
 	//to avoid the metric being lost, if sampling is undefined set it to 1
@@ -34,18 +34,18 @@ func counterAggregator(receivedMetric input.Metric, key metricKey) {
 	//updating the value is broken down into several lines in order to make dealing
 	//with type coersion easier
 	sampledValue := receivedMetric.Value * (1 / receivedMetric.Sampling)
-	previousValue := buckets[key].Fields["value"].(float64)
-	buckets[key].Fields["value"] = sampledValue + previousValue
-	buckets[key].Timestamp = receivedMetric.Timestamp
+	previousValue := metricBuckets[key].Fields["value"].(float64)
+	metricBuckets[key].Fields["value"] = sampledValue + previousValue
+	metricBuckets[key].Timestamp = receivedMetric.Timestamp
 }
 
 func setAggregator(receivedMetric input.Metric, key metricKey) {
 	k := strconv.FormatFloat(float64(receivedMetric.Value), 'f', 2, 32)
-	buckets[key].Fields[k] = receivedMetric.Value
+	metricBuckets[key].Fields[k] = receivedMetric.Value
 }
 
 func histogramAggregator(receivedMetric input.Metric, key metricKey) {
-	histogram := buckets[key]
+	histogram := metricBuckets[key]
 	histogram.Timestamp = receivedMetric.Timestamp
 	histogram.Values = append(histogram.Values, receivedMetric.Value)
 	sort.Float64s(histogram.Values)

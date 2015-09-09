@@ -8,16 +8,24 @@ import (
 )
 
 type (
-	//Metric represents a single time series point
+	/*Metric represents a single time series point
+
+	Type is one of: histogram, counter, gauge or set
+
+	SecondaryData represents values other than the primary value which should
+	be treated as data and not metadata by the backend storage
+
+	Tags are KV metadata
+	*/
 	Metric struct {
-		Name       string
-		Host       string
-		Timestamp  string
-		Type       string
-		Value      float64
-		Sampling   float64
-		RoutingKey string
-		Tags       map[string]string
+		Name          string
+		Host          string
+		Timestamp     string
+		Type          string
+		Sampling      float64
+		Value         float64
+		SecondaryData map[string]interface{}
+		Tags          map[string]string
 	}
 
 	//Event represents a single event instance
@@ -30,7 +38,6 @@ type (
 		Timestamp      string
 		AlertType      string
 		Tags           map[string]string
-		RoutingKey     string
 		SourceType     string
 	}
 
@@ -50,14 +57,10 @@ func (handler *metricsHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Requ
 	err := decoder.Decode(&receivedMetric)
 
 	if err == nil {
-		//add an aditional tag specifing the host which forwarded aggregateD the metric
+		//add an aditional field specifing the host which forwarded aggregateD the metric
 		//this might often be the same as the client specified host field but in situations
 		//where the client is behind NAT, i.e many EVE clients this information is useful.
-		if receivedMetric.Tags == nil {
-			receivedMetric.Tags = make(map[string]string)
-		}
-		receivedMetric.Tags["Source"] = r.RemoteAddr
-
+		receivedMetric.SecondaryData["Source"] = r.RemoteAddr
 		handler.metricsIn <- receivedMetric
 	} else {
 		fmt.Println("error parsing metric")

@@ -16,7 +16,6 @@ type (
 		InfluxPort      string
 		InfluxUsername  string
 		InfluxPassword  string
-		InfluxDatabases []string
 		InfluxDefaultDB string
 	}
 
@@ -27,7 +26,6 @@ type (
 		Name      string            `json:"name"`
 		Timestamp string            `json:"timestamp"`
 		Tags      map[string]string `json:"tags"`
-		Database  string
 		//intermediate values for histograms, only fields are sent to influxdb
 		Values []float64              `json:"-"`
 		Fields map[string]interface{} `json:"fields"`
@@ -36,12 +34,9 @@ type (
 
 //WriteToInfluxDB takes a map of bucket slices, indexed by database and writes
 //each of those slices to InfluxDB as batch points
-func WriteToInfluxDB(bucketDBMap map[string][]Bucket, config InfluxDBConfig) {
+func WriteToInfluxDB(buckets []Bucket, config InfluxDBConfig, database string) {
 	client := configureInfluxDB(config)
-
-	for k, v := range bucketDBMap {
-		writeInfluxDB(v, &client, k)
-	}
+	writeInfluxDB(buckets, &client, database)
 }
 
 //ConfigureInfluxDB takes a struct describing the influx config and returns a Influx connection
