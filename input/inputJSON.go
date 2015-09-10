@@ -60,6 +60,9 @@ func (handler *metricsHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Requ
 		//add an aditional field specifing the host which forwarded aggregateD the metric
 		//this might often be the same as the client specified host field but in situations
 		//where the client is behind NAT, i.e many EVE clients this information is useful.
+		if receivedMetric.SecondaryData == nil {
+			receivedMetric.SecondaryData = make(map[string]interface{})
+		}
 		receivedMetric.SecondaryData["Source"] = r.RemoteAddr
 		handler.metricsIn <- receivedMetric
 	} else {
