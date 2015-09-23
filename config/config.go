@@ -13,10 +13,9 @@ import (
 
 //Configuration encapsulates all config options for aggregated
 type Configuration struct {
-	InfluxConfig    output.InfluxDBConfig
-	JSONOutputURL   url.URL
-	ReportMetaStats bool
-	FlushInterval   int
+	InfluxConfig  output.InfluxDBConfig
+	JSONOutputURL url.URL
+	FlushInterval int
 }
 
 //ReadConfig takes a file path as a string and returns a string representing
@@ -90,11 +89,6 @@ func ParseConfig(rawConfig []byte, metricsIn chan input.Metric, eventsIn chan in
 	//if there is no where defined to submit metrics to, exit
 	if outputUndefined {
 		panic("No outputs defined")
-	}
-
-	//record the number of metrics and events that are handled as a metric
-	if viper.GetBool("reportMetaStats") {
-		parsedConfig.ReportMetaStats = true
 	}
 
 	if viper.GetBool("inputJSON") {

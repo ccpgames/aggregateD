@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 )
 
 type (
@@ -63,7 +64,9 @@ func (handler *metricsHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Requ
 		if receivedMetric.SecondaryData == nil {
 			receivedMetric.SecondaryData = make(map[string]interface{})
 		}
-		receivedMetric.SecondaryData["Source"] = r.RemoteAddr
+		sourceAddress := r.RemoteAddr
+		sourceIP := sourceAddress[0:strings.Index(r.RemoteAddr, ":")]
+		receivedMetric.SecondaryData["source"] = sourceIP
 		handler.metricsIn <- receivedMetric
 	} else {
 		fmt.Println("error parsing metric")
@@ -83,7 +86,9 @@ func (handler *eventsHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Reque
 		if receivedEvent.Tags == nil {
 			receivedEvent.Tags = make(map[string]string)
 		}
-		receivedEvent.Tags["Source"] = r.RemoteAddr
+		sourceAddress := r.RemoteAddr
+		sourceIP := sourceAddress[0:strings.Index(r.RemoteAddr, ":")]
+		receivedEvent.Tags["source"] = sourceIP
 		handler.eventsIn <- receivedEvent
 
 	} else {

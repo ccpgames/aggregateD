@@ -61,6 +61,7 @@ func histogramAggregator(receivedMetric input.Metric, key metricKey) {
 	average := total / count
 	median := histogram.Values[len(histogram.Values)/2]
 	max := histogram.Values[int(count-1)]
+	min := histogram.Values[0]
 	index := float64(0.95) * count
 	percentile95 := histogram.Values[int(index)]
 
@@ -68,6 +69,7 @@ func histogramAggregator(receivedMetric input.Metric, key metricKey) {
 	histogram.Fields["avg"] = average
 	histogram.Fields["median"] = median
 	histogram.Fields["max"] = max
+	histogram.Fields["min"] = min
 	histogram.Fields["95percentile"] = percentile95
 
 }

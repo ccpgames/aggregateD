@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"flag"
-	"fmt"
 	"time"
 
 	"github.com/ccpgames/aggregateD/config"
@@ -67,13 +66,13 @@ func aggregateMetric(receivedMetric input.Metric) {
 	//if a handler exists to aggregate the metric, do so
 	//otherwise ignore the metric
 	if receivedMetric.Name == "" {
-		fmt.Println("Invalid msetric name")
+		//fmt.Println("Invalid metric name")
 		return
 	} else if receivedMetric.Timestamp == "" {
-		fmt.Println("Invalid timestamp")
+		//fmt.Println("Invalid timestamp")
 		return
 	} else if receivedMetric.Type == "" {
-		fmt.Println("Invalid Type")
+		//fmt.Println("Invalid Type")
 		return
 	}
 
@@ -103,34 +102,19 @@ func aggregateMetric(receivedMetric input.Metric) {
 
 		handler(receivedMetric, key)
 
-		//create a meta-metric couting the number of metrics that are processed
-		//it's useful for debug purposes and tracking the performance of aggregateD
-		if configuration.ReportMetaStats {
-			//ensure that metametrics aren't reported as regular metrics
-			if receivedMetric.Name != "aggregated_metric_count" {
-				metastats := new(input.Metric)
-				metastats.Name = "aggregated_metric_count"
-				metastats.Sampling = 1
-				metastats.Type = "counter"
-				metastats.Timestamp = time.Now().Format("2006-01-02 15:04:05 -0700")
-				metastats.Value = 1
-
-				metricsIn <- *metastats
-			}
-		}
 	}
 }
 
 //aggregate multiple events into one bucket
 func aggregateEvent(receivedEvent input.Event) {
 	if receivedEvent.Name == "" {
-		fmt.Println("Invalid event title")
+		//fmt.Println("Invalid event title")
 		return
 	} else if receivedEvent.Timestamp == "" {
-		fmt.Println("Invalid timestamp")
+		//fmt.Println("Invalid timestamp")
 		return
 	} else if receivedEvent.Text == "" {
-		fmt.Println("Invalid Type")
+		//fmt.Println("Invalid Type")
 		return
 	}
 
