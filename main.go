@@ -80,7 +80,7 @@ func aggregateMetric(receivedMetric input.Metric) {
 	distinct tags and secondary data are not aggregated they are used as part of the key. Unfortunately
 	go doesn't allow for maps to be used in a key, therefore we serialise the map
 	to a json string and use that instead of the map. Sorry. */
-	if handler, ok := aggregators[receivedMetric.Type]; ok {
+	if handler, handlerOK := aggregators[receivedMetric.Type]; handlerOK {
 		key := *(new(metricKey))
 		key.Name = receivedMetric.Name
 
@@ -90,14 +90,14 @@ func aggregateMetric(receivedMetric input.Metric) {
 		key.Tags = string(jsonTagMap)
 		key.SecondaryData = string(jsonSecondaryDataMap)
 
-		_, ok := metricBuckets[key]
+		_, bucketOK := metricBuckets[key]
 
 		//if bucket doesn't exist, create one
-		if !ok {
+		if !bucketOK {
 			metricBuckets[key] = new(output.Bucket)
 			metricBuckets[key].Name = receivedMetric.Name
 			metricBuckets[key].Fields = receivedMetric.SecondaryData
-			metricBuckets[key].Tags = make(map[string]string)
+			metricBuckets[key].Tags = receivedMetric.Tags
 		}
 
 		handler(receivedMetric, key)
@@ -131,7 +131,7 @@ func aggregateEvent(receivedEvent input.Event) {
 		eventBuckets[key] = new(output.Bucket)
 		eventBuckets[key].Name = receivedEvent.Name
 		eventBuckets[key].Fields = make(map[string]interface{})
-		eventBuckets[key].Tags = make(map[string]string)
+		eventBuckets[key].Tags = receivedEvent.Tags
 
 	}
 
