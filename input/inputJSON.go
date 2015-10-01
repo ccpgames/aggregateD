@@ -67,6 +67,11 @@ func (handler *metricsHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Requ
 		sourceAddress := r.RemoteAddr
 		sourceIP := sourceAddress[0:strings.Index(r.RemoteAddr, ":")]
 		receivedMetric.SecondaryData["source"] = sourceIP
+		for k := range receivedMetric.SecondaryData {
+			if receivedMetric.SecondaryData[k] == nil {
+				receivedMetric.SecondaryData[k] = 0.0
+			}
+		}
 		handler.metricsIn <- receivedMetric
 	} else {
 		fmt.Println("error parsing metric")
