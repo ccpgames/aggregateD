@@ -99,7 +99,6 @@ func aggregateMetric(receivedMetric input.Metric) {
 			metricBuckets[key].Fields = receivedMetric.SecondaryData
 			metricBuckets[key].Tags = receivedMetric.Tags
 		}
-
 		handler(receivedMetric, key)
 
 	}
