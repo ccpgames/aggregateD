@@ -13,9 +13,10 @@ import (
 
 //Configuration encapsulates all config options for aggregated
 type Configuration struct {
-	InfluxConfig  output.InfluxDBConfig
-	JSONOutputURL url.URL
-	FlushInterval int
+	InfluxConfig   output.InfluxDBConfig
+	JSONOutputURL  url.URL
+	RedisOutputURL url.URL
+	FlushInterval  int
 }
 
 //ReadConfig takes a file path as a string and returns a string representing
@@ -57,6 +58,16 @@ func ParseConfig(rawConfig []byte, metricsIn chan input.Metric, eventsIn chan in
 		outputUndefined = false
 	}
 
+	if viper.GetBool("redisOnInfluxFail") {
+		redisURL, err := url.Parse(viper.GetString("redisOutputURL"))
+
+		if err != nil {
+			panic("malformed redis URL")
+		}
+
+		parsedConfig.RedisOutputURL = *redisURL
+
+	}
 	if (len(parsedConfig.InfluxConfig.InfluxHost)) == 0 {
 		panic("InfluxDB host undefined")
 	}

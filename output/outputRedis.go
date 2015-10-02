@@ -17,11 +17,9 @@ func WriteRedis(buckets []Bucket, redisURL url.URL) error {
 	for bucket := range buckets {
 		jsonBucket, jsonErr := json.Marshal(bucket)
 
-		if jsonErr != nil {
-			//do stuff
+		if jsonErr == nil {
+			redisClient.PipeAppend("APPEND", "aggregated-failed", jsonBucket)
 		}
-
-		redisClient.PipeAppend("APPEND", "aggregated-failed", jsonBucket)
 
 	}
 

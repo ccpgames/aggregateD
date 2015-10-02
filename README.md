@@ -16,11 +16,17 @@ Usuage:
 aggregateD requires a minimal config in order to specify the InfluxDB server and its credentials. Config can either be provided as a json file or as a yaml file. An example config is as follows:
   ```yaml
 
+#accept metrics via HTTP
 inputJSON: true
+#accept metrics via plain StatsD
 inputStatsD: true
+#accept metrics via DogStatsD
 inputDogStatsD: true
+
+#output metrics via InfluxDB
 outputInfluxDB: true
 
+#influxDB settings
 influx:
     host: localhost
     port: 8086
@@ -28,8 +34,9 @@ influx:
     password: pass123
     defaultDB: myDB
 
-
-reportMetaStats: true
+#write to a redis list if InfluxDB is unavailable
+redisOnInfluxFail: true
+redisOutputURL redis:6379
   ```
 
 aggregateD exposes two web service endpoints: /events and /metrics on port 8083 by default. aggregateD accepts json encoded metrics which take the form of:

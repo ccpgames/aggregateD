@@ -34,9 +34,9 @@ type (
 
 //WriteToInfluxDB takes a map of bucket slices, indexed by database and writes
 //each of those slices to InfluxDB as batch points
-func WriteToInfluxDB(buckets []Bucket, config InfluxDBConfig, database string) {
+func WriteToInfluxDB(buckets []Bucket, config InfluxDBConfig, database string) error {
 	client := configureInfluxDB(config)
-	writeInfluxDB(buckets, &client, database)
+	return writeInfluxDB(buckets, &client, database)
 }
 
 //ConfigureInfluxDB takes a struct describing the influx config and returns a Influx connection
@@ -70,7 +70,7 @@ func configureInfluxDB(config InfluxDBConfig) client.Client {
 //This should be compatable with the 0.9x releases of InfluxDB, as the 0.9 series is
 //still in beta, it is prone to change which might break this function as was the
 //case when Name was changed to Measurement in client.Point
-func writeInfluxDB(buckets []Bucket, influxConnection *client.Client, database string) {
+func writeInfluxDB(buckets []Bucket, influxConnection *client.Client, database string) error {
 	var (
 		points      = make([]client.Point, len(buckets))
 		pointsIndex = 0
@@ -98,7 +98,8 @@ func writeInfluxDB(buckets []Bucket, influxConnection *client.Client, database s
 	fmt.Println("WRITING")
 	_, err := influxConnection.Write(pointsBatch)
 	if err != nil {
-		fmt.Println("write failed:")
 		fmt.Println(err)
+		return err
 	}
+	return nil
 }

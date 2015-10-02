@@ -163,7 +163,12 @@ func flush() {
 			outputBuckets = append(outputBuckets, *event)
 		}
 
-		output.WriteToInfluxDB(outputBuckets, configuration.InfluxConfig, configuration.InfluxConfig.InfluxDefaultDB)
+		writeErr := output.WriteToInfluxDB(outputBuckets, configuration.InfluxConfig, configuration.InfluxConfig.InfluxDefaultDB)
+		if writeErr != nil {
+			if len(configuration.RedisOutputURL.String()) > 0 {
+				output.WriteRedis(outputBuckets, configuration.RedisOutputURL)
+			}
+		}
 	}
 
 	if len(configuration.JSONOutputURL.String()) > 0 {
