@@ -36,7 +36,7 @@ influx:
 
 #write to a redis list if InfluxDB is unavailable
 redisOnInfluxFail: true
-redisOutputURL redis:6379
+redisOutputURL: redis:6379
   ```
 
 aggregateD exposes two web service endpoints: /events and /metrics on port 8083 by default. aggregateD accepts json encoded metrics which take the form of:
