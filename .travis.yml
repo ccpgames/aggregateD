@@ -5,7 +5,7 @@ go:
 
 install:
   - go get -t "github.com/spf13/viper"
-  - go get -t "github.com/influxdb/influxdb/client"
+  - go get -t "github.com/influxdata/influxdb/client"
   - go get -t "github.com/mediocregopher/radix.v2/redis"
 
 script:
