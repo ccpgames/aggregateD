@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/influxdb/influxdb/client"
+	"github.com/influxdata/influxdb/client"
 )
 
 type (
