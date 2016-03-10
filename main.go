@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"flag"
-	"strconv"
+	"log"
 	"time"
 
 	"github.com/ccpgames/aggregateD/config"
@@ -67,8 +67,10 @@ func aggregateMetric(receivedMetric input.Metric) {
 	//if a handler exists to aggregate the metric, do so
 	//otherwise ignore the metric
 	if receivedMetric.Name == "" {
+		log.Printf("Invalid metric recieved from %s, missing name", receivedMetric.SecondaryData["source"])
 		return
 	} else if receivedMetric.Type == "" {
+		log.Printf("Invalid metric recieved from %s, missing type", receivedMetric.SecondaryData["source"])
 		return
 	}
 
@@ -103,8 +105,10 @@ func aggregateMetric(receivedMetric input.Metric) {
 //aggregate multiple events into one bucket
 func aggregateEvent(receivedEvent input.Event) {
 	if receivedEvent.Name == "" {
+		log.Printf("Invalid event recieved from %s, missing name", receivedEvent.Tags["source"])
 		return
 	} else if receivedEvent.Text == "" {
+		log.Printf("Invalid event recieved from %s, missing text", receivedEvent.Tags["source"])
 		return
 	}
 
@@ -180,18 +184,19 @@ func flush() {
 
 }
 
-/*parseTimestamp parses a UNIX timestamp string to a Go time type and returns the
-current time if it is unable to do so */
-func parseTimestamp(timestamp string) time.Time {
-	timestampFloat, err := strconv.ParseFloat(timestamp, 64)
-	if err != nil {
-		return time.Unix(int64(timestampFloat), 0)
+/*parseTimestamp parses a UNIX timestamp from an int to
+a Go time.Time type */
+func parseTimestamp(timestamp int64) time.Time {
+	if timestamp > 0 {
+		return time.Unix(int64(timestamp), 0)
 	}
 	return time.Now()
 
 }
 
 func main() {
+	log.Print("Starting aggregateD")
+
 	configFilePath := flag.String("config", "", "configuration file")
 	flag.Parse()
 
@@ -202,5 +207,6 @@ func main() {
 	}
 
 	configuration = config.ParseConfig(configFile, metricsIn, eventsIn)
+	log.Print("Serving ")
 	aggregate()
 }

@@ -6,7 +6,6 @@ import (
 	"net"
 	"strconv"
 	"strings"
-	"time"
 )
 
 //ServeStatD serves the statsad protocol via UDP.
@@ -36,8 +35,6 @@ func ServeStatD(port string, metricsIn chan Metric) string {
 			parsedMetric, err := parseStatDMetric(metric)
 
 			if err == nil {
-				//add tag to metric denoting its point of origin
-				parsedMetric.Timestamp = time.Now().Format("2006-01-02 15:04:05 -0700")
 				metricsIn <- parsedMetric
 			}
 		}

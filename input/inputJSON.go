@@ -2,7 +2,6 @@ package input
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -22,7 +21,7 @@ type (
 	Metric struct {
 		Name          string
 		Host          string
-		Timestamp     string
+		Timestamp     int64
 		Type          string
 		Sampling      float64
 		Value         float64
@@ -57,6 +56,8 @@ func (handler *metricsHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Requ
 	decoder := json.NewDecoder(r.Body)
 	var receivedMetric Metric
 	err := decoder.Decode(&receivedMetric)
+	sourceAddress := r.RemoteAddr
+	sourceIP := sourceAddress[0:strings.Index(r.RemoteAddr, ":")]
 
 	if err == nil {
 		//add an aditional field specifing the host which forwarded aggregateD the metric
@@ -65,8 +66,6 @@ func (handler *metricsHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Requ
 		if receivedMetric.SecondaryData == nil {
 			receivedMetric.SecondaryData = make(map[string]interface{})
 		}
-		sourceAddress := r.RemoteAddr
-		sourceIP := sourceAddress[0:strings.Index(r.RemoteAddr, ":")]
 		receivedMetric.SecondaryData["source"] = sourceIP
 
 		//ensure that no secondary values are nil, clients should not
@@ -79,8 +78,8 @@ func (handler *metricsHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Requ
 
 		handler.metricsIn <- receivedMetric
 	} else {
-		fmt.Println("error parsing metric")
-		fmt.Println(err)
+		log.Println(err)
+		log.Printf("Unable to decode metric from, %s", sourceAddress)
 	}
 
 	r.Body.Close()
@@ -91,15 +90,19 @@ func (handler *eventsHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Reque
 	decoder := json.NewDecoder(r.Body)
 	var receivedEvent Event
 	err := decoder.Decode(&receivedEvent)
+	sourceAddress := r.RemoteAddr
+	sourceIP := sourceAddress[0:strings.Index(r.RemoteAddr, ":")]
 
 	if err == nil {
 		if receivedEvent.Tags == nil {
 			receivedEvent.Tags = make(map[string]string)
 		}
-		sourceAddress := r.RemoteAddr
-		sourceIP := sourceAddress[0:strings.Index(r.RemoteAddr, ":")]
+
 		receivedEvent.Tags["source"] = sourceIP
 		handler.eventsIn <- receivedEvent
+	} else {
+		log.Println(err)
+		log.Printf("Unable to decode event from, %s", sourceAddress)
 	}
 
 	r.Body.Close()
