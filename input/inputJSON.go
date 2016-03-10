@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	"time"
 )
 
 type (
@@ -21,7 +20,7 @@ type (
 	Metric struct {
 		Name          string
 		Host          string
-		Timestamp     int64
+		Timestamp     float64
 		Type          string
 		Sampling      float64
 		Value         float64
@@ -36,7 +35,7 @@ type (
 		Host           string
 		AggregationKey string
 		Priority       string
-		Timestamp      time.Time
+		Timestamp      float64
 		AlertType      string
 		Tags           map[string]string
 		SourceType     string
