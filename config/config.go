@@ -124,8 +124,8 @@ func ParseConfig(rawConfig []byte, metricsIn chan input.Metric, eventsIn chan in
 		panic("No inputs defined")
 	}
 
-	//default write interval is 10 seconds
-	viper.SetDefault("flushInterval", 10)
+	//default write interval is 60 seconds
+	viper.SetDefault("flushInterval", 60)
 	parsedConfig.FlushInterval = viper.GetInt("flushInterval")
 
 	return *parsedConfig

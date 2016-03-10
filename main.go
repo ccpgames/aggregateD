@@ -136,7 +136,7 @@ func aggregateEvent(receivedEvent input.Event) {
 	eventBuckets[key].Fields["priority"] = receivedEvent.Priority
 	eventBuckets[key].Fields["alert_type"] = receivedEvent.AlertType
 
-	eventBuckets[key].Timestamp = receivedEvent.Timestamp
+	eventBuckets[key].Timestamp = parseTimestamp(receivedEvent.Timestamp)
 
 	for k, v := range receivedEvent.Tags {
 		eventBuckets[key].Tags[k] = v
@@ -146,7 +146,6 @@ func aggregateEvent(receivedEvent input.Event) {
 //write out aggregated buckets to one or more outputs and clear the metric and event
 //dictionaries
 func flush() {
-
 	if len(configuration.InfluxConfig.InfluxHost) > 0 {
 		outputBuckets := make([]output.Bucket, 0, len(metricBuckets)+len(eventBuckets))
 
@@ -158,10 +157,19 @@ func flush() {
 			outputBuckets = append(outputBuckets, *event)
 		}
 
-		writeErr := output.WriteToInfluxDB(outputBuckets, configuration.InfluxConfig, configuration.InfluxConfig.InfluxDefaultDB)
-		if writeErr != nil {
-			if len(configuration.RedisOutputURL.String()) > 0 {
-				output.WriteRedis(outputBuckets, configuration.RedisOutputURL)
+		totalPoints := len(metricBuckets) + len(eventBuckets)
+		if totalPoints > 0 {
+			log.Printf("Writing %d points to InfluxDB", totalPoints)
+			influxdbErr := output.WriteToInfluxDB(outputBuckets, configuration.InfluxConfig, configuration.InfluxConfig.InfluxDefaultDB)
+
+			if influxdbErr != nil {
+				if len(configuration.RedisOutputURL.String()) > 0 {
+					log.Printf("InfluxDB write failed, attempting to write %d points to Redis", totalPoints)
+					redisErr := output.WriteRedis(outputBuckets, configuration.RedisOutputURL)
+					if redisErr != nil {
+						log.Println("WARNING: Redis write failed, metrics have been dropped")
+					}
+				}
 			}
 		}
 	}
@@ -184,9 +192,9 @@ func flush() {
 
 }
 
-/*parseTimestamp parses a UNIX timestamp from an int to
+/*parseTimestamp parses a UNIX timestamp from a float to
 a Go time.Time type */
-func parseTimestamp(timestamp int64) time.Time {
+func parseTimestamp(timestamp float64) time.Time {
 	if timestamp > 0 {
 		return time.Unix(int64(timestamp), 0)
 	}

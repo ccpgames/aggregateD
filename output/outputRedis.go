@@ -18,7 +18,10 @@ func WriteRedis(buckets []Bucket, redisURL url.URL) error {
 		jsonBucket, jsonErr := json.Marshal(bucket)
 
 		if jsonErr == nil {
-			redisClient.Cmd("RPUSH", "aggregated", jsonBucket)
+			resp := redisClient.Cmd("RPUSH", "aggregated", jsonBucket)
+			if resp.Err != nil {
+				return resp.Err
+			}
 		}
 	}
 

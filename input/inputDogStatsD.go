@@ -82,7 +82,7 @@ func parseDogStatsDMetric(message string) (Metric, error) {
 
 	parsedMetric := Metric{
 		Name:      name,
-		Timestamp: time.Now().Unix(),
+		Timestamp: float64(time.Now().Unix()),
 		Type:      metricType,
 		Value:     floatValue,
 		Sampling:  floatSampleRate,

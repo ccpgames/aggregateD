@@ -94,7 +94,6 @@ func writeInfluxDB(buckets []Bucket, influxConnection *client.Client, database s
 		RetentionPolicy: "default",
 	}
 
-	fmt.Println(pointsBatch)
 	_, err := influxConnection.Write(pointsBatch)
 	if err != nil {
 		log.Println("Unable to write to InfluxDB")
