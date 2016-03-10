@@ -52,7 +52,6 @@ type (
 
 //http handler function, unmarshalls json encoded metric into metric struct
 func (handler *metricsHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	log.Println(r.Body)
 	decoder := json.NewDecoder(r.Body)
 	var receivedMetric Metric
 	err := decoder.Decode(&receivedMetric)
