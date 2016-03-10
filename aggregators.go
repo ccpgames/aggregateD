@@ -14,7 +14,7 @@ func gaugeAggregator(receivedMetric input.Metric, key metricKey) {
 		metricBuckets[key].Fields["value"] = 0
 	}
 
-	metricBuckets[key].Timestamp = receivedMetric.Timestamp
+	metricBuckets[key].Timestamp = parseTimestamp(receivedMetric.Timestamp)
 	metricBuckets[key].Fields["value"] = receivedMetric.Value
 }
 
@@ -36,7 +36,8 @@ func counterAggregator(receivedMetric input.Metric, key metricKey) {
 	sampledValue := receivedMetric.Value * (1 / receivedMetric.Sampling)
 	previousValue := metricBuckets[key].Fields["value"].(float64)
 	metricBuckets[key].Fields["value"] = sampledValue + previousValue
-	metricBuckets[key].Timestamp = receivedMetric.Timestamp
+	metricBuckets[key].Timestamp = parseTimestamp(receivedMetric.Timestamp)
+
 }
 
 func setAggregator(receivedMetric input.Metric, key metricKey) {
@@ -46,7 +47,8 @@ func setAggregator(receivedMetric input.Metric, key metricKey) {
 
 func histogramAggregator(receivedMetric input.Metric, key metricKey) {
 	histogram := metricBuckets[key]
-	histogram.Timestamp = receivedMetric.Timestamp
+	histogram.Timestamp = parseTimestamp(receivedMetric.Timestamp)
+
 	histogram.Values = append(histogram.Values, receivedMetric.Value)
 	sort.Float64s(histogram.Values)
 	count := float64(len(histogram.Values))

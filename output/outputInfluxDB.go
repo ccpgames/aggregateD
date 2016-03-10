@@ -24,7 +24,7 @@ type (
 	//fields
 	Bucket struct {
 		Name      string            `json:"name"`
-		Timestamp string            `json:"timestamp"`
+		Timestamp time.Time         `json:"timestamp"`
 		Tags      map[string]string `json:"tags"`
 		//intermediate values for histograms, only fields are sent to influxdb
 		Values []float64              `json:"-"`
@@ -78,13 +78,12 @@ func writeInfluxDB(buckets []Bucket, influxConnection *client.Client, database s
 
 	for k := range buckets {
 		bucket := buckets[k]
-		timestamp, _ := time.Parse("YYYY-MM-DD HH:MM:SS.mmm", bucket.Timestamp)
 
 		points[pointsIndex] = client.Point{
 			Measurement: bucket.Name,
 			Tags:        bucket.Tags,
 			Fields:      bucket.Fields,
-			Time:        timestamp,
+			Time:        bucket.Timestamp,
 		}
 		pointsIndex++
 	}
@@ -95,11 +94,12 @@ func writeInfluxDB(buckets []Bucket, influxConnection *client.Client, database s
 		RetentionPolicy: "default",
 	}
 
-	fmt.Println("WRITING")
+	fmt.Println(pointsBatch)
 	_, err := influxConnection.Write(pointsBatch)
 	if err != nil {
 		fmt.Println(err)
 		return err
 	}
+	fmt.Println("written")
 	return nil
 }

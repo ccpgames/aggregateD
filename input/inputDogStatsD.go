@@ -80,11 +80,9 @@ func parseDogStatsDMetric(message string) (Metric, error) {
 		return Metric{}, errors.New("unable to parse DogStatsD value")
 	}
 
-	t := time.Now()
-
 	parsedMetric := Metric{
 		Name:      name,
-		Timestamp: t.Format(time.RFC1123),
+		Timestamp: string((time.Now().Unix())),
 		Type:      metricType,
 		Value:     floatValue,
 		Sampling:  floatSampleRate,

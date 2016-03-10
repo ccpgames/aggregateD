@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 )
 
 type (
@@ -36,7 +37,7 @@ type (
 		Host           string
 		AggregationKey string
 		Priority       string
-		Timestamp      string
+		Timestamp      time.Time
 		AlertType      string
 		Tags           map[string]string
 		SourceType     string
@@ -99,9 +100,6 @@ func (handler *eventsHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Reque
 		sourceIP := sourceAddress[0:strings.Index(r.RemoteAddr, ":")]
 		receivedEvent.Tags["source"] = sourceIP
 		handler.eventsIn <- receivedEvent
-
-	} else {
-		//fmt.Println("error parsing event")
 	}
 
 	r.Body.Close()

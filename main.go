@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	"strconv"
 	"time"
 
 	"github.com/ccpgames/aggregateD/config"
@@ -66,13 +67,8 @@ func aggregateMetric(receivedMetric input.Metric) {
 	//if a handler exists to aggregate the metric, do so
 	//otherwise ignore the metric
 	if receivedMetric.Name == "" {
-		//fmt.Println("Invalid metric name")
-		return
-	} else if receivedMetric.Timestamp == "" {
-		//fmt.Println("Invalid timestamp")
 		return
 	} else if receivedMetric.Type == "" {
-		//fmt.Println("Invalid Type")
 		return
 	}
 
@@ -107,13 +103,8 @@ func aggregateMetric(receivedMetric input.Metric) {
 //aggregate multiple events into one bucket
 func aggregateEvent(receivedEvent input.Event) {
 	if receivedEvent.Name == "" {
-		//fmt.Println("Invalid event title")
-		return
-	} else if receivedEvent.Timestamp == "" {
-		//fmt.Println("Invalid timestamp")
 		return
 	} else if receivedEvent.Text == "" {
-		//fmt.Println("Invalid Type")
 		return
 	}
 
@@ -186,6 +177,17 @@ func flush() {
 
 	metricBuckets = make(map[metricKey]*output.Bucket)
 	eventBuckets = make(map[eventKey]*output.Bucket)
+
+}
+
+/*parseTimestamp parses a UNIX timestamp string to a Go time type and returns the
+current time if it is unable to do so */
+func parseTimestamp(timestamp string) time.Time {
+	timestampFloat, err := strconv.ParseFloat(timestamp, 64)
+	if err != nil {
+		return time.Unix(int64(timestampFloat), 0)
+	}
+	return time.Now()
 
 }
 
