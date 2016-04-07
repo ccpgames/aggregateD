@@ -31,18 +31,25 @@ type (
 //WriteToInfluxDB takes a map of bucket slices, indexed by database and writes
 //each of those slices to InfluxDB as batch points
 func WriteToInfluxDB(buckets []Bucket, config InfluxDBConfig) error {
-     c, err := client.NewHTTPClient(client.HTTPConfig{
+     c, clientErr := client.NewHTTPClient(client.HTTPConfig{
         Addr: config.InfluxURL,
         Username: config.InfluxUsername,
         Password: config.InfluxPassword,
     })
 
-    points, err := client.NewBatchPoints(client.BatchPointsConfig{
+    if clientErr != nil {
+        return clientErr
+    }
+    
+    points, pointErr := client.NewBatchPoints(client.BatchPointsConfig{
         Database:  config.InfluxDefaultDB,
         Precision: "s",
     })
 
-
+    if pointErr != nil {
+        return pointErr
+    }
+    
 	for k := range buckets {
 		bucket := buckets[k]
 
@@ -62,8 +69,9 @@ func WriteToInfluxDB(buckets []Bucket, config InfluxDBConfig) error {
     writeError := c.Write(points)
     
 	if writeError != nil {
-		log.Println(err)
-		return err
+		log.Println(writeError)
+		return writeError
 	}
+    
 	return nil
 }

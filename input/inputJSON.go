@@ -52,12 +52,13 @@ type (
 
 //http handler function, unmarshalls json encoded metric into metric struct
 func (handler *metricsHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	log.Println("Received metric ")
     decoder := json.NewDecoder(r.Body)
 	var receivedMetric Metric
 	err := decoder.Decode(&receivedMetric)
 	sourceAddress := r.RemoteAddr
 	sourceIP := sourceAddress[0:strings.Index(r.RemoteAddr, ":")]
+    log.Printf("Received metric from %s\n", sourceAddress)
+
 
 	if err == nil {
 		//add an aditional field specifing the host which forwarded aggregateD the metric
