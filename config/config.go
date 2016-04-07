@@ -49,8 +49,7 @@ func ParseConfig(rawConfig []byte, metricsIn chan input.Metric, eventsIn chan in
 
 	if viper.GetBool("outputInfluxDB") {
 		parsedConfig.InfluxConfig = output.InfluxDBConfig{
-			InfluxHost:      viper.GetString("influx.host"),
-			InfluxPort:      viper.GetString("influx.port"),
+			InfluxURL:      viper.GetString("influx.url"),
 			InfluxUsername:  viper.GetString("influx.username"),
 			InfluxPassword:  viper.GetString("influx.password"),
 			InfluxDefaultDB: viper.GetString("influx.defaultDB"),
@@ -68,12 +67,8 @@ func ParseConfig(rawConfig []byte, metricsIn chan input.Metric, eventsIn chan in
 		parsedConfig.RedisOutputURL = *redisURL
 
 	}
-	if (len(parsedConfig.InfluxConfig.InfluxHost)) == 0 {
-		panic("InfluxDB host undefined")
-	}
-
-	if (len(parsedConfig.InfluxConfig.InfluxPort)) == 0 {
-		panic("InfluxDB port undefined")
+	if (len(parsedConfig.InfluxConfig.InfluxURL)) == 0 {
+		panic("InfluxDB URL undefined")
 	}
 
 	if (len(parsedConfig.InfluxConfig.InfluxUsername)) == 0 {
@@ -101,6 +96,7 @@ func ParseConfig(rawConfig []byte, metricsIn chan input.Metric, eventsIn chan in
 	if outputUndefined {
 		panic("No outputs defined")
 	}
+
 
 	if viper.GetBool("inputJSON") {
 		viper.SetDefault("HTTPPort", "8003")

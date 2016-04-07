@@ -1,19 +1,15 @@
 package output
 
 import (
-	"fmt"
 	"log"
-	"net/url"
 	"time"
-
-	"github.com/influxdata/influxdb/client"
+	"github.com/influxdata/influxdb/client/v2"
 )
 
 type (
 	//InfluxDBConfig describes the configuration details for Influx connection
 	InfluxDBConfig struct {
-		InfluxHost      string
-		InfluxPort      string
+		InfluxURL     string
 		InfluxUsername  string
 		InfluxPassword  string
 		InfluxDefaultDB string
@@ -34,69 +30,38 @@ type (
 
 //WriteToInfluxDB takes a map of bucket slices, indexed by database and writes
 //each of those slices to InfluxDB as batch points
-func WriteToInfluxDB(buckets []Bucket, config InfluxDBConfig, database string) error {
-	client := configureInfluxDB(config)
-	return writeInfluxDB(buckets, &client, database)
-}
+func WriteToInfluxDB(buckets []Bucket, config InfluxDBConfig) error {
+     c, err := client.NewHTTPClient(client.HTTPConfig{
+        Addr: config.InfluxURL,
+        Username: config.InfluxUsername,
+        Password: config.InfluxPassword,
+    })
 
-//ConfigureInfluxDB takes a struct describing the influx config and returns a Influx connection
-func configureInfluxDB(config InfluxDBConfig) client.Client {
+    points, err := client.NewBatchPoints(client.BatchPointsConfig{
+        Database:  config.InfluxDefaultDB,
+        Precision: "s",
+    })
 
-	influxURL, err := url.Parse(fmt.Sprintf("http://%s:%s", config.InfluxHost, config.InfluxPort))
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	conf := client.Config{
-		URL:      *influxURL,
-		Username: config.InfluxUsername,
-		Password: config.InfluxPassword,
-	}
-
-	influxConnection, err := client.NewClient(conf)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return *influxConnection
-}
-
-//WriteInfluxDB commits the buckets to InfluxDB
-//This should be compatable with the 0.9x releases of InfluxDB, as the 0.9 series is
-//still in beta, it is prone to change which might break this function as was the
-//case when Name was changed to Measurement in client.Point
-func writeInfluxDB(buckets []Bucket, influxConnection *client.Client, database string) error {
-	var (
-		points      = make([]client.Point, len(buckets))
-		pointsIndex = 0
-	)
 
 	for k := range buckets {
 		bucket := buckets[k]
 
-		points[pointsIndex] = client.Point{
-			Measurement: bucket.Name,
-			Tags:        bucket.Tags,
-			Fields:      bucket.Fields,
-			Time:        bucket.Timestamp,
-		}
-		pointsIndex++
+		point, err := client.NewPoint(
+			bucket.Name,
+			bucket.Tags,
+			bucket.Fields,
+			bucket.Timestamp)
+            
+        if err != nil {
+            log.Printf("Malformed point, {%s, %s, %s %s} excluded from batch", bucket.Name, bucket.Tags, bucket.Fields, bucket.Timestamp)
+        } else {
+            points.AddPoint(point)
+        }
 	}
 
-	pointsBatch := client.BatchPoints{
-		Points:          points,
-		Database:        database,
-		RetentionPolicy: "default",
-	}
-
-	_, err := influxConnection.Write(pointsBatch)
-	if err != nil {
-		log.Println("Unable to write to InfluxDB")
+    writeError := c.Write(points)
+    
+	if writeError != nil {
 		log.Println(err)
 		return err
 	}
