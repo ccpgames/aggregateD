@@ -23,18 +23,20 @@ inputStatsD: true
 #accept metrics via DogStatsD
 inputDogStatsD: true
 
+#submit metrics to InfluxDB every 60 seconds
+flushInterval: 60
+
 #output metrics via InfluxDB
 outputInfluxDB: true
 
 #influxDB settings
 influx:
-    host: localhost
-    port: 8086
+    url: http://localhost:8083
     username: username
     password: pass123
     defaultDB: myDB
 
-#write to a redis list if InfluxDB is unavailable
+#write to a redis list falback if InfluxDB is unavailable
 redisOnInfluxFail: true
 redisOutputURL: redis:6379
   ```
@@ -45,7 +47,7 @@ aggregateD exposes two web service endpoints: /events and /metrics on port 8083 
   {
   	"name":      		"requests",
   	"host":      		"httpd.example.com",
-  	"timestamp": 		"Wed, 13 May 2015 14:56:25 +0000",
+  	"timestamp": 		1461204545	
   	"type":      		"gauge",
   	"value":     		67,
   	"sampling":  		1,
@@ -62,7 +64,7 @@ Similarly, events are represented in the following format:
     "host":           "node4.example.com",
     "alerttype":      "warning",
     "priority":       "normal",
-    "timestamp":      "Wed, 13 May 2015 14:56:25 +0000",
+    "timestamp":      1461204545
     "aggregationKey": "worker-timeout",
     "sourceType":     "default",
     "tags":           {"exampleTag1": 5, "exampleTag2": "value"},
