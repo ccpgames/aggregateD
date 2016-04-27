@@ -122,5 +122,7 @@ func ServeHTTP(port string, metricsIn chan Metric, eventsIn chan Event) {
 	server.Handle("/metrics", metricsHandler)
 	server.Handle("/events", eventsHandler)
 
+	log.Printf("Accepting json metrics on port %s", port)
+
 	log.Fatal(http.ListenAndServe(":"+port, server))
 }

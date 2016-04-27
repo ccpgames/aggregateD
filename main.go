@@ -227,6 +227,6 @@ func main() {
 	m.eventBuckets = make(map[eventKey]*output.Bucket)
 
 	configuration = config.ParseConfig(configFile, m.metricsIn, m.eventsIn)
-	log.Print("Serving ")
+	log.Print("Begining aggregation")
 	m.aggregate()
 }
