@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/url"
 
+	"github.com/ccpgames/aggregateD/health"
 	"github.com/ccpgames/aggregateD/input"
 	"github.com/ccpgames/aggregateD/output"
 	"github.com/spf13/viper"
@@ -49,7 +50,7 @@ func ParseConfig(rawConfig []byte, metricsIn chan input.Metric, eventsIn chan in
 
 	if viper.GetBool("outputInfluxDB") {
 		parsedConfig.InfluxConfig = output.InfluxDBConfig{
-			InfluxURL:      viper.GetString("influx.url"),
+			InfluxURL:       viper.GetString("influx.url"),
 			InfluxUsername:  viper.GetString("influx.username"),
 			InfluxPassword:  viper.GetString("influx.password"),
 			InfluxDefaultDB: viper.GetString("influx.defaultDB"),
@@ -97,7 +98,6 @@ func ParseConfig(rawConfig []byte, metricsIn chan input.Metric, eventsIn chan in
 		panic("No outputs defined")
 	}
 
-
 	if viper.GetBool("inputJSON") {
 		viper.SetDefault("HTTPPort", "8003")
 		go input.ServeHTTP(viper.GetString("HTTPPort"), metricsIn, eventsIn)
@@ -118,6 +118,10 @@ func ParseConfig(rawConfig []byte, metricsIn chan input.Metric, eventsIn chan in
 
 	if inputUndefied {
 		panic("No inputs defined")
+	}
+
+	if viper.GetBool("healthCheck") {
+		go health.Serve(parsedConfig.InfluxConfig)
 	}
 
 	//default write interval is 60 seconds
