@@ -31,7 +31,8 @@ type (
 
 	//MetricBatch represent a batch of individual metrics that have been sent together
 	MetricBatch struct {
-		batch []Metric
+		Batch []Metric
+		Size  int32
 	}
 
 	//Event represents a single event instance
@@ -65,6 +66,7 @@ func (handler *metricsHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Requ
 	decoder := json.NewDecoder(r.Body)
 	var receivedMetric Metric
 	err := decoder.Decode(&receivedMetric)
+
 	sourceAddress := r.RemoteAddr
 	sourceIP, _, _ := net.SplitHostPort(r.RemoteAddr)
 	log.Printf("Received metric from %s\n", sourceIP)
@@ -105,18 +107,32 @@ func (handler *eventsHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Reque
 }
 
 func (handler *metricsBatchHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	decoder := json.NewDecoder(r.Body)
 	var receivedMetricBatch MetricBatch
-	err := decoder.Decode(&receivedMetricBatch)
+
+	if r.Body == nil {
+		http.Error(w, "Empty request body", 400)
+		return
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&receivedMetricBatch)
+	if err != nil {
+		http.Error(w, "Malformed batch", 400)
+		log.Println("Malformed batch")
+		return
+	}
+
 	sourceAddress := r.RemoteAddr
 	sourceIP, _, _ := net.SplitHostPort(r.RemoteAddr)
-	log.Printf("Received metric from %s\n", sourceIP)
 
+	log.Printf("Received metric batch from %s\n", sourceIP)
 	if err == nil {
-		for i := range receivedMetricBatch.batch {
-			parseMetric(receivedMetricBatch.batch[i], sourceIP, handler.metricsIn)
+		if len(receivedMetricBatch.Batch) == 0 {
+			log.Printf("metric batch from %s is empty\n", sourceIP)
+		} else {
+			for i := range receivedMetricBatch.Batch {
+				parseMetric(receivedMetricBatch.Batch[i], sourceIP, handler.metricsIn)
+			}
 		}
-
 	} else {
 		log.Println(err)
 		log.Printf("Unable to decode metric batch from, %s", sourceAddress)
@@ -128,6 +144,7 @@ func parseMetric(receivedMetric Metric, sourceIP string, metricsIn chan Metric) 
 	//add an aditional field specifing the host which forwarded aggregateD the metric
 	//this might often be the same as the client specified host field but in situations
 	//where the client is behind NAT, i.e many EVE clients this information is useful.
+
 	if receivedMetric.SecondaryData == nil {
 		receivedMetric.SecondaryData = make(map[string]interface{})
 	}
@@ -140,7 +157,6 @@ func parseMetric(receivedMetric Metric, sourceIP string, metricsIn chan Metric) 
 			receivedMetric.SecondaryData[k] = 0.0
 		}
 	}
-
 	metricsIn <- receivedMetric
 }
 
