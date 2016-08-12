@@ -35,9 +35,15 @@ type (
 	Main struct {
 		metricsIn     chan input.Metric
 		eventsIn      chan input.Event
-		metricBuckets map[metricKey]*output.Bucket
+		metricBuckets map[metricKey][]timestampedBucket
 		eventBuckets  map[eventKey]*output.Bucket
-		aggregators   map[string]func(input.Metric, metricKey)
+		aggregators   map[string]func(input.Metric, *output.Bucket)
+	}
+
+	timestampedBucket struct {
+		StartTimestamp int
+		EndTimestamp   int
+		MetricBucket   *output.Bucket
 	}
 )
 
@@ -46,7 +52,7 @@ var (
 )
 
 func (m *Main) aggregate() {
-	t := time.NewTicker(time.Duration(configuration.FlushInterval) * time.Second)
+	t := time.NewTicker(time.Duration(60) * time.Second)
 	for {
 		select {
 		case <-t.C:
@@ -86,16 +92,32 @@ func (m *Main) aggregateMetric(receivedMetric input.Metric) {
 		key.Tags = string(jsonTagMap)
 		key.SecondaryData = string(jsonSecondaryDataMap)
 
-		_, bucketOK := m.metricBuckets[key]
+		_, outerBucketSliceOK := m.metricBuckets[key]
+		var outerBucket timestampedBucket
 
-		//if bucket doesn't exist, create one
-		if !bucketOK {
-			m.metricBuckets[key] = new(output.Bucket)
-			m.metricBuckets[key].Name = receivedMetric.Name
-			m.metricBuckets[key].Fields = receivedMetric.SecondaryData
-			m.metricBuckets[key].Tags = receivedMetric.Tags
+		//if this metric isn't know create a new bucket for it
+		if !outerBucketSliceOK {
+			outerBucket = *new(timestampedBucket)
+			m.metricBuckets[key] = *new([]timestampedBucket)
 		}
-		handler(receivedMetric, key)
+
+		innerBucket, innerBucketOK := getBucket(int(receivedMetric.Timestamp), m.metricBuckets[key])
+
+		//if metric falls outside the time range we already have, make a new timestamped bucket
+		//i.e. no inner bucket means no outer bucket
+		if !innerBucketOK {
+			innerBucket = new(output.Bucket)
+			outerBucket.StartTimestamp = int(receivedMetric.Timestamp)
+			//tempoary for testing, change 10 to config specified variable
+			outerBucket.EndTimestamp = int(receivedMetric.Timestamp) + 10
+			innerBucket.Name = receivedMetric.Name
+			innerBucket.Fields = receivedMetric.SecondaryData
+			innerBucket.Tags = receivedMetric.Tags
+			outerBucket.MetricBucket = innerBucket
+			m.metricBuckets[key] = append(m.metricBuckets[key], outerBucket)
+		}
+
+		handler(receivedMetric, innerBucket)
 
 	}
 }
@@ -120,11 +142,11 @@ func (m *Main) aggregateEvent(receivedEvent input.Event) {
 	_, ok := m.eventBuckets[key]
 
 	if !ok {
+		m.eventBuckets[key].Timestamp = parseTimestamp(receivedEvent.Timestamp)
 		m.eventBuckets[key] = new(output.Bucket)
 		m.eventBuckets[key].Name = receivedEvent.Name
 		m.eventBuckets[key].Fields = make(map[string]interface{})
 		m.eventBuckets[key].Tags = receivedEvent.Tags
-
 	}
 
 	m.eventBuckets[key].Fields["name"] = receivedEvent.Name
@@ -144,25 +166,27 @@ func (m *Main) aggregateEvent(receivedEvent input.Event) {
 //write out aggregated buckets to one or more outputs and clear the metric and event
 //dictionaries
 func (m *Main) flush() {
+	var outputBuckets []output.Bucket
+
+	for _, v := range m.metricBuckets {
+		for i := range v {
+			outputBuckets = append(outputBuckets, *v[i].MetricBucket)
+		}
+	}
+
+	for _, event := range m.eventBuckets {
+		outputBuckets = append(outputBuckets, *event)
+	}
+
 	if len(configuration.InfluxConfig.InfluxURL) > 0 {
-		outputBuckets := make([]output.Bucket, 0, len(m.metricBuckets)+len(m.eventBuckets))
 
-		for _, metric := range m.metricBuckets {
-			outputBuckets = append(outputBuckets, *metric)
-		}
-
-		for _, event := range m.eventBuckets {
-			outputBuckets = append(outputBuckets, *event)
-		}
-
-		totalPoints := len(m.metricBuckets) + len(m.eventBuckets)
-		if totalPoints > 0 {
-			log.Printf("Writing %d points to InfluxDB", totalPoints)
+		if len(outputBuckets) > 0 {
+			log.Printf("Writing %d points to InfluxDB", len(outputBuckets))
 			influxdbErr := output.WriteToInfluxDB(outputBuckets, configuration.InfluxConfig)
 
 			if influxdbErr != nil {
 				if len(configuration.RedisOutputURL.String()) > 0 {
-					log.Printf("InfluxDB write failed, attempting to write %d points to Redis", totalPoints)
+					log.Printf("InfluxDB write failed, attempting to write %d points to Redis", len(outputBuckets))
 					redisErr := output.WriteRedis(outputBuckets, configuration.RedisOutputURL)
 					if redisErr != nil {
 						log.Println("WARNING: Redis write failed, metrics have been dropped")
@@ -173,19 +197,10 @@ func (m *Main) flush() {
 	}
 
 	if len(configuration.JSONOutputURL.String()) > 0 {
-		var bucketArray []output.Bucket
-		for _, v := range m.metricBuckets {
-			bucketArray = append(bucketArray, *v)
-		}
-
-		for _, v := range m.eventBuckets {
-			bucketArray = append(bucketArray, *v)
-		}
-
-		output.WriteJSON(bucketArray, configuration.JSONOutputURL)
+		output.WriteJSON(outputBuckets, configuration.JSONOutputURL)
 	}
 
-	m.metricBuckets = make(map[metricKey]*output.Bucket)
+	m.metricBuckets = make(map[metricKey][]timestampedBucket)
 	m.eventBuckets = make(map[eventKey]*output.Bucket)
 
 }
@@ -198,6 +213,17 @@ func parseTimestamp(timestamp float64) time.Time {
 	}
 	return time.Now()
 
+}
+
+func getBucket(timestamp int, buckets []timestampedBucket) (*output.Bucket, bool) {
+
+	for i := range buckets {
+		if timestamp >= buckets[i].StartTimestamp && timestamp <= buckets[i].EndTimestamp {
+			return buckets[i].MetricBucket, true
+		}
+	}
+
+	return nil, false
 }
 
 func main() {
@@ -214,7 +240,7 @@ func main() {
 
 	m := new(Main)
 
-	m.aggregators = map[string]func(input.Metric, metricKey){
+	m.aggregators = map[string]func(input.Metric, *output.Bucket){
 		"gauge":     m.gaugeAggregator,
 		"set":       m.setAggregator,
 		"counter":   m.counterAggregator,
@@ -223,7 +249,7 @@ func main() {
 
 	m.metricsIn = make(chan input.Metric, 10000)
 	m.eventsIn = make(chan input.Event, 10000)
-	m.metricBuckets = make(map[metricKey]*output.Bucket)
+	m.metricBuckets = make(map[metricKey][]timestampedBucket)
 	m.eventBuckets = make(map[eventKey]*output.Bucket)
 
 	configuration = config.ParseConfig(configFile, m.metricsIn, m.eventsIn)

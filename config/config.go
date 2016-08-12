@@ -14,10 +14,11 @@ import (
 
 //Configuration encapsulates all config options for aggregated
 type Configuration struct {
-	InfluxConfig   output.InfluxDBConfig
-	JSONOutputURL  url.URL
-	RedisOutputURL url.URL
-	FlushInterval  int
+	InfluxConfig        output.InfluxDBConfig
+	JSONOutputURL       url.URL
+	RedisOutputURL      url.URL
+	FlushInterval       int
+	AggregationInterval int
 }
 
 //ReadConfig takes a file path as a string and returns a string representing
@@ -127,6 +128,9 @@ func ParseConfig(rawConfig []byte, metricsIn chan input.Metric, eventsIn chan in
 	//default write interval is 60 seconds
 	viper.SetDefault("flushInterval", 60)
 	parsedConfig.FlushInterval = viper.GetInt("flushInterval")
+
+	viper.SetDefault("aggregationInterval", 10)
+	parsedConfig.FlushInterval = viper.GetInt("aggregationInterval")
 
 	return *parsedConfig
 }
