@@ -130,7 +130,7 @@ func ParseConfig(rawConfig []byte, metricsIn chan input.Metric, eventsIn chan in
 	parsedConfig.FlushInterval = viper.GetInt("flushInterval")
 
 	viper.SetDefault("aggregationInterval", 10)
-	parsedConfig.FlushInterval = viper.GetInt("aggregationInterval")
+	parsedConfig.AggregationInterval = viper.GetInt("aggregationInterval")
 
 	return *parsedConfig
 }

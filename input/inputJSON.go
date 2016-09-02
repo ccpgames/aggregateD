@@ -27,6 +27,7 @@ type (
 		Value         float64
 		SecondaryData map[string]interface{}
 		Tags          map[string]string
+		Aggregate     bool
 	}
 
 	//MetricBatch represent a batch of individual metrics that have been sent together
@@ -70,7 +71,7 @@ func (handler *metricsHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Requ
 	sourceAddress := r.RemoteAddr
 	sourceIP, _, _ := net.SplitHostPort(r.RemoteAddr)
 	log.Printf("Received metric from %s\n", sourceIP)
-
+	receivedMetric.Aggregate = true
 	if err == nil {
 		parseMetric(receivedMetric, sourceIP, handler.metricsIn)
 	} else {
@@ -157,6 +158,8 @@ func parseMetric(receivedMetric Metric, sourceIP string, metricsIn chan Metric) 
 			receivedMetric.SecondaryData[k] = 0.0
 		}
 	}
+
+	receivedMetric.Aggregate = false
 	metricsIn <- receivedMetric
 }
 

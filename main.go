@@ -33,11 +33,12 @@ type (
 	//Main represents the top level program execution which predominantly
 	//includes the aggregation process. Inputs and outputs are done by other modules
 	Main struct {
-		metricsIn     chan input.Metric
-		eventsIn      chan input.Event
-		metricBuckets map[metricKey][]timestampedBucket
-		eventBuckets  map[eventKey]*output.Bucket
-		aggregators   map[string]func(input.Metric, *output.Bucket)
+		metricsIn           chan input.Metric
+		eventsIn            chan input.Event
+		metricBuckets       map[metricKey][]timestampedBucket
+		unaggregatedMetrics []output.Bucket
+		eventBuckets        map[eventKey]*output.Bucket
+		aggregators         map[string]func(input.Metric, *output.Bucket)
 	}
 
 	timestampedBucket struct {
@@ -52,13 +53,23 @@ var (
 )
 
 func (m *Main) aggregate() {
-	t := time.NewTicker(time.Duration(60) * time.Second)
+	t := time.NewTicker(time.Duration(configuration.FlushInterval) * time.Second)
 	for {
 		select {
 		case <-t.C:
 			m.flush()
 		case receivedMetric := <-m.metricsIn:
-			m.aggregateMetric(receivedMetric)
+			if receivedMetric.Aggregate {
+				m.aggregateMetric(receivedMetric)
+			} else {
+				outputMetric := new(output.Bucket)
+				outputMetric.Name = receivedMetric.Name
+				outputMetric.Timestamp = parseTimestamp(receivedMetric.Timestamp)
+				outputMetric.Fields = receivedMetric.SecondaryData
+				outputMetric.Tags = receivedMetric.Tags
+				outputMetric.Values = append(outputMetric.Values, receivedMetric.Value)
+				m.unaggregatedMetrics = append(m.unaggregatedMetrics, *outputMetric)
+			}
 		case receivedEvent := <-m.eventsIn:
 			m.aggregateEvent(receivedEvent)
 		}
@@ -109,7 +120,7 @@ func (m *Main) aggregateMetric(receivedMetric input.Metric) {
 			innerBucket = new(output.Bucket)
 			outerBucket.StartTimestamp = int(receivedMetric.Timestamp)
 			//tempoary for testing, change 10 to config specified variable
-			outerBucket.EndTimestamp = int(receivedMetric.Timestamp) + 10
+			outerBucket.EndTimestamp = int(receivedMetric.Timestamp) + configuration.AggregationInterval
 			innerBucket.Name = receivedMetric.Name
 			innerBucket.Fields = receivedMetric.SecondaryData
 			innerBucket.Tags = receivedMetric.Tags
