@@ -13,7 +13,6 @@ type healthHTTPHandler struct {
 
 func (handler *healthHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	_, err := http.Get(handler.influxdbConfig.InfluxURL + "/ping")
-	log.Println(handler.influxdbConfig.InfluxURL)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("Unable to write to InfluxDB"))

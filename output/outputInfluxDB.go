@@ -66,6 +66,7 @@ func WriteToInfluxDB(buckets []Bucket, config InfluxDBConfig) error {
 			points.AddPoint(point)
 		}
 	}
+	log.Printf("Writing %d points to InfluxDB", len(points.Points()))
 
 	writeError := c.Write(points)
 

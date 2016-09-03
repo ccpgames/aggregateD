@@ -124,8 +124,8 @@ func (handler *metricsBatchHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http
 
 	sourceAddress := r.RemoteAddr
 	sourceIP, _, _ := net.SplitHostPort(r.RemoteAddr)
+	log.Printf("Received metric batch of %d metrics from %s\n", receivedMetricBatch.Size, sourceIP)
 
-	//log.Printf("Received metric batch from %s\n", sourceIP)
 	if err == nil {
 		if len(receivedMetricBatch.Batch) == 0 {
 			log.Printf("metric batch from %s is empty\n", sourceIP)

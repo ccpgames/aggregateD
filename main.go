@@ -66,6 +66,7 @@ func (m *Main) aggregate() {
 				outputMetric.Name = receivedMetric.Name
 				outputMetric.Timestamp = parseTimestamp(receivedMetric.Timestamp)
 				outputMetric.Fields = receivedMetric.SecondaryData
+				outputMetric.Fields["value"] = receivedMetric.Value
 				outputMetric.Tags = receivedMetric.Tags
 				outputMetric.Values = append(outputMetric.Values, receivedMetric.Value)
 				m.unaggregatedMetrics = append(m.unaggregatedMetrics, *outputMetric)
@@ -189,10 +190,10 @@ func (m *Main) flush() {
 		outputBuckets = append(outputBuckets, *event)
 	}
 
+	outputBuckets = append(outputBuckets, m.unaggregatedMetrics...)
 	if len(configuration.InfluxConfig.InfluxURL) > 0 {
-
 		if len(outputBuckets) > 0 {
-			log.Printf("Writing %d points to InfluxDB", len(outputBuckets))
+
 			influxdbErr := output.WriteToInfluxDB(outputBuckets, configuration.InfluxConfig)
 
 			if influxdbErr != nil {
@@ -213,7 +214,7 @@ func (m *Main) flush() {
 
 	m.metricBuckets = make(map[metricKey][]timestampedBucket)
 	m.eventBuckets = make(map[eventKey]*output.Bucket)
-
+	m.unaggregatedMetrics = nil
 }
 
 /*parseTimestamp parses a UNIX timestamp from a float to
